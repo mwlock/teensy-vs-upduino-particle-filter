@@ -1,6 +1,3 @@
 [submodule "src/mcl"]
 	path = src/mcl
 	url = https://github.com/matthew-william-lock/mcl
-[submodule "src/--force"]
-	path = src/--force
-	url = https://github.com/matthew-william-lock/webots_ros2
