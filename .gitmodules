@@ -1,3 +1,6 @@
 [submodule "src/mcl"]
 	path = src/mcl
 	url = https://github.com/matthew-william-lock/mcl
+[submodule "src/webots_ros2"]
+	path = src/webots_ros2
+	url = https://github.com/cyberbotics/webots_ros2
