@@ -17,15 +17,20 @@
 // micro-ROS imports
 rcl_publisher_t publisher;
 rcl_subscription_t subscriber_odom;
+rcl_subscription_t subscriber_scan;
 std_msgs__msg__Int32 msg;
 
 // Message types
 nav_msgs__msg__Odometry odometryMsg;
-sensor_msgs__msg__LaserScan lasterScanMsg;
+sensor_msgs__msg__LaserScan laserScanMsg;
 geometry_msgs__msg__Twist msgTwist;
 
+// Executors
 rclc_executor_t executor;
-rclc_executor_t executor_odom_pub;
+rclc_executor_t executor_scan_sub;
+rclc_executor_t executor_odom_sub;
+
+
 rclc_support_t support;
 rcl_allocator_t allocator;
 rcl_node_t node;
@@ -49,17 +54,31 @@ void timer_callback(rcl_timer_t * timer, int64_t last_call_time) {
   }
 }
 
+  // ==================================================================================================================================================
+  // =                                                                                                                                                =
+  // =                                                         Callbacks                                                                              =
+  // =                                                                                                                                                =
+  // ==================================================================================================================================================
+
 // Odometry message cb
-void subscription_callback(const void *msgin) {
+void odom_subscription_callback(const void *msgin) {
 
   // Turn on LED
-  digitalWrite(LED_BUILTIN, HIGH);
+  // digitalWrite(LED_BUILTIN, HIGH);
 
 //   RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
 //   msg.data++;
 //   // const geometry_msgs__msg__Twist * msg = (const geometry_msgs__msg__Twist *)msgin;
 //   // if velocity in x direction is 0 turn off LED, if 1 turn on LED
 //   // digitalWrite(LED_PIN, (msg->linear.x == 0) ? LOW : HIGH);
+}
+
+// Odometry message cb
+void scan_subscription_callback(const void *msgin) {
+
+  // Turn on LED
+  digitalWrite(LED_BUILTIN, HIGH);
+
 }
 
 void setup() {
@@ -69,13 +88,10 @@ void setup() {
   set_microros_serial_transports(Serial);
   delay(2000);
 
-  // LED setup
+  // LED setup and start up indicator
   pinMode(LED_BUILTIN, OUTPUT);
-
   digitalWrite(LED_BUILTIN, HIGH);
-
   delay(1000);
-
   digitalWrite(LED_BUILTIN, LOW);
 
   allocator = rcl_get_default_allocator();
@@ -86,12 +102,31 @@ void setup() {
   // create node
   RCCHECK(rclc_node_init_default(&node, "monte_carlo_localizer_teensy_node", "", &support));
 
+  // ==================================================================================================================================================
+  // =                                                                                                                                                =
+  // =                                                         Subscribers declare                                                                    =
+  // =                                                                                                                                                =
+  // ==================================================================================================================================================
+
   // create subscriber
   RCCHECK(rclc_subscription_init_default(
     &subscriber_odom,
     &node,
     ROSIDL_GET_MSG_TYPE_SUPPORT(nav_msgs, msg, Odometry),
     "odom"));
+
+  // create subscriber
+  RCCHECK(rclc_subscription_init_default(
+    &subscriber_scan,
+    &node,
+    ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, LaserScan),
+    "scan"));
+
+  // ==================================================================================================================================================
+  // =                                                                                                                                                =
+  // =                                                         Publisher   declare                                                                    =
+  // =                                                                                                                                                =
+  // ==================================================================================================================================================
 
   // create publisher
   RCCHECK(rclc_publisher_init_default(
@@ -108,13 +143,29 @@ void setup() {
     RCL_MS_TO_NS(timer_timeout),
     timer_callback));
 
+  // ==================================================================================================================================================
+  // =                                                                                                                                                =
+  // =                                                         Publishers init                                                                        =
+  // =                                                                                                                                                =
+  // ==================================================================================================================================================
+
   // publisher
   RCCHECK(rclc_executor_init(&executor, &support.context, 1, &allocator));
   RCCHECK(rclc_executor_add_timer(&executor, &timer));
 
+  // ==================================================================================================================================================
+  // =                                                                                                                                                =
+  // =                                                         Subscribers init                                                                       =
+  // =                                                                                                                                                =
+  // ==================================================================================================================================================
+
   // odom subscriber
-  RCCHECK(rclc_executor_init(&executor_odom_pub, &support.context, 1, &allocator));
-  RCCHECK(rclc_executor_add_subscription(&executor_odom_pub, &subscriber_odom, &odometryMsg, &subscription_callback, ON_NEW_DATA));  
+  RCCHECK(rclc_executor_init(&executor_odom_sub, &support.context, 1, &allocator));
+  RCCHECK(rclc_executor_add_subscription(&executor_odom_sub, &subscriber_odom, &odometryMsg, &odom_subscription_callback, ON_NEW_DATA));  
+
+  // scan subscriber
+  RCCHECK(rclc_executor_init(&executor_scan_sub, &support.context, 1, &allocator));
+  RCCHECK(rclc_executor_add_subscription(&executor_scan_sub, &subscriber_scan, &laserScanMsg, &scan_subscription_callback, ON_NEW_DATA));  
 
   msg.data = 0;
 }
@@ -123,5 +174,6 @@ void loop() {
   delay(100);
   // Spin ros executors
   RCSOFTCHECK(rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100)));
-  RCSOFTCHECK(rclc_executor_spin_some(&executor_odom_pub, RCL_MS_TO_NS(100)));
+  RCSOFTCHECK(rclc_executor_spin_some(&executor_odom_sub, RCL_MS_TO_NS(100)));
+  RCSOFTCHECK(rclc_executor_spin_some(&executor_scan_sub, RCL_MS_TO_NS(100)));
 }
