@@ -1,15 +1,17 @@
 #include "particle.hpp"
 
-// Date constructor
-Particle::Particle(int year, int month, int day)
+// Particle constructor
+Particle::Particle()
 {
-    SetDate(year, month, day);
+    weight = 0.0;
+    pose.orientation = {0,0,0,0};
+    pose.position = {0,0,0};
 }
 
 // Date member function
-void Particle::SetDate(int year, int month, int day)
-{
-    m_month = month;
-    m_day = day;
-    m_year = year;
-}
+// void Particle::SetDate(int year, int month, int day)
+// {
+//     m_month = month;
+//     m_day = day;
+//     m_year = year;
+// }

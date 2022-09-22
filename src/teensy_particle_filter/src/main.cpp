@@ -10,6 +10,8 @@
 #include <sensor_msgs/msg/laser_scan.h>
 #include <geometry_msgs/msg/pose_array.h>
 
+#include "particle.hpp"
+
 #if !defined(MICRO_ROS_TRANSPORT_ARDUINO_SERIAL)
 #error This example is only avaliable for Arduino framework with serial transport.
 #endif
@@ -55,6 +57,12 @@ void timer_callback(rcl_timer_t * timer, int64_t last_call_time) {
     msg.data++;
   }
 }
+
+  // ==================================================================================================================================================
+  // =                                                                                                                                                =
+  // =                                                         Particle                                                                               =
+  // =                                                                                                                                                =
+  // ==================================================================================================================================================
 
   // ==================================================================================================================================================
   // =                                                                                                                                                =
