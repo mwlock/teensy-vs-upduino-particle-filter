@@ -8,14 +8,15 @@
 #include <std_msgs/msg/int32.h>
 #include <nav_msgs/msg/odometry.h>
 #include <sensor_msgs/msg/laser_scan.h>
-#include <geometry_msgs/msg/twist.h>
+#include <geometry_msgs/msg/pose_array.h>
 
 #if !defined(MICRO_ROS_TRANSPORT_ARDUINO_SERIAL)
 #error This example is only avaliable for Arduino framework with serial transport.
 #endif
 
-// micro-ROS imports
+// micro-ROS messages
 rcl_publisher_t publisher;
+rcl_publisher_t publisherPoseArray;
 rcl_subscription_t subscriber_odom;
 rcl_subscription_t subscriber_scan;
 std_msgs__msg__Int32 msg;
@@ -23,12 +24,13 @@ std_msgs__msg__Int32 msg;
 // Message types
 nav_msgs__msg__Odometry odometryMsg;
 sensor_msgs__msg__LaserScan laserScanMsg;
-geometry_msgs__msg__Twist msgTwist;
+geometry_msgs__msg__PoseArray msgPoseArray;
 
 // Executors
 rclc_executor_t executor;
 rclc_executor_t executor_scan_sub;
 rclc_executor_t executor_odom_sub;
+rclc_executor_t executor_particle_cloud_pub;
 
 
 rclc_support_t support;
@@ -135,6 +137,13 @@ void setup() {
     ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
     "micro_ros_platformio_node_publisher"));
 
+  // create publisher
+  RCCHECK(rclc_publisher_init_default(
+    &publisherPoseArray,
+    &node,
+    ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, PoseArray),
+    "particlecloud_teensy"));
+
   // create timer,
   const unsigned int timer_timeout = 1000;
   RCCHECK(rclc_timer_init_default(
@@ -152,6 +161,9 @@ void setup() {
   // publisher
   RCCHECK(rclc_executor_init(&executor, &support.context, 1, &allocator));
   RCCHECK(rclc_executor_add_timer(&executor, &timer));
+
+  RCCHECK(rclc_executor_init(&executor_particle_cloud_pub, &support.context, 1, &allocator));
+  // RCCHECK(rclc_executor_add_timer(&executor, &timer));
 
   // ==================================================================================================================================================
   // =                                                                                                                                                =
@@ -176,4 +188,6 @@ void loop() {
   RCSOFTCHECK(rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100)));
   RCSOFTCHECK(rclc_executor_spin_some(&executor_odom_sub, RCL_MS_TO_NS(100)));
   RCSOFTCHECK(rclc_executor_spin_some(&executor_scan_sub, RCL_MS_TO_NS(100)));
+  RCSOFTCHECK(rclc_executor_spin_some(&executor_particle_cloud_pub, RCL_MS_TO_NS(100)));
 }
+
