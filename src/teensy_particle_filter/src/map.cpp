@@ -6,6 +6,7 @@ Map::Map(string file_name){
     /**
      * Read map from pgm file
      * https://stackoverflow.com/questions/8126815/how-to-read-in-data-from-a-pgm-file-in-c
+     * https://stackoverflow.com/questions/8617683/return-a-2d-array-from-a-function
      *
      * @param file_name file name read map from
      * @return 2D array with grid cell map
@@ -40,16 +41,7 @@ Map::Map(string file_name){
         array[row] = new float[numcols];
         for (col = 0; col < numcols; ++col) ss >> array[row][col];
     }        
-
-    // Now print the array to see the result
-    // for(row = 0; row < numrows; ++row) {
-    //     for(col = 0; col < numcols; ++col) {
-    //     cout << array[row][col] << " ";
-    //     }
-    //     cout << endl;
-    // }
-    // infile.close();
-
+    
     map = array;
 }
 

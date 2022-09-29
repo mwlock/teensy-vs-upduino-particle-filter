@@ -13,9 +13,12 @@
 #include "particle.hpp"
 #include "map.hpp"
 
+#include <vector>
+
 // Config headers
 # include "../config/motion_model.h"
 # include "../config/sensor_model.h"
+# include "../config/mcl.h"
 
 #if !defined(MICRO_ROS_TRANSPORT_ARDUINO_SERIAL)
 #error This example is only avaliable for Arduino framework with serial transport.
@@ -45,6 +48,7 @@ rcl_node_t node;
 rcl_timer_t timer;
 
 float** map;
+std::vector<Particle> particles;
 
 #define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){error_loop();}}
 #define RCSOFTCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){}}
@@ -203,6 +207,18 @@ void setup() {
   map = mapReader.getMap();
 
   // TODO : get sensor model
+
+  // ==================================================================================================================================================
+  // =                                                                                                                                                =
+  // =                                                         Particle  init                                                                         =
+  // =                                                                                                                                                =
+  // ==================================================================================================================================================
+
+ for (int i = 0; i < num_of_particles; i++) {
+    Particle particle = Particle();                 // Create new particle
+    particle.initParticle(3,3,num_of_particles);    // Init the particles
+    particles.push_back(particle);                  // Append particle to the vector (dynamic list)
+  }
 
   msg.data = 0;
 }
