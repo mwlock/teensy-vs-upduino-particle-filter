@@ -11,6 +11,11 @@
 #include <geometry_msgs/msg/pose_array.h>
 
 #include "particle.hpp"
+#include "map.hpp"
+
+// Config headers
+# include "../config/motion_model.h"
+# include "../config/sensor_model.h"
 
 #if !defined(MICRO_ROS_TRANSPORT_ARDUINO_SERIAL)
 #error This example is only avaliable for Arduino framework with serial transport.
@@ -34,11 +39,12 @@ rclc_executor_t executor_scan_sub;
 rclc_executor_t executor_odom_sub;
 rclc_executor_t executor_particle_cloud_pub;
 
-
 rclc_support_t support;
 rcl_allocator_t allocator;
 rcl_node_t node;
 rcl_timer_t timer;
+
+float** map;
 
 #define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){error_loop();}}
 #define RCSOFTCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){}}
@@ -186,6 +192,17 @@ void setup() {
   // scan subscriber
   RCCHECK(rclc_executor_init(&executor_scan_sub, &support.context, 1, &allocator));
   RCCHECK(rclc_executor_add_subscription(&executor_scan_sub, &subscriber_scan, &laserScanMsg, &scan_subscription_callback, ON_NEW_DATA));  
+
+  // ==================================================================================================================================================
+  // =                                                                                                                                                =
+  // =                                                 Read map data and get sensor model                                                             =
+  // =                                                                                                                                                =
+  // ==================================================================================================================================================
+
+  Map mapReader = Map("epuck_world_map.pgm");
+  map = mapReader.getMap();
+
+  // TODO : get sensor model
 
   msg.data = 0;
 }

@@ -9,3 +9,7 @@
 ### Teensy Development
 - [VSCode + PlatformIO](https://platformio.org/)
 - [micro_ros_arduino_pub_sub_example](https://github.com/botamochi6277/micro_ros_arduino_pub_sub_example)
+
+## Interesting Tools
+- [The MRPT project](https://github.com/MRPT/mrpt)
+- [OctoMap](https://github.com/OctoMap/octomap)
