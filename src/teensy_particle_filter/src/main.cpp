@@ -47,7 +47,8 @@ rcl_allocator_t allocator;
 rcl_node_t node;
 rcl_timer_t timer;
 
-float** map;
+// Particle filter
+float** occupancy_map;
 std::vector<Particle> particles;
 
 #define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){error_loop();}}
@@ -204,7 +205,7 @@ void setup() {
   // ==================================================================================================================================================
 
   Map mapReader = Map("epuck_world_map.pgm");
-  map = mapReader.getMap();
+  occupancy_map = mapReader.getMap();
 
   // TODO : get sensor model
 

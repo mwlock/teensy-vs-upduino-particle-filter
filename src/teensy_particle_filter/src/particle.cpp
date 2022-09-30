@@ -25,15 +25,15 @@ void Particle::initParticle(double x_width,double y_width, int numParticles){
      * @param numPartciles number of particles being generated
      */
 
-    std::default_random_engine generator;
-    std::uniform_real_distribution<double> distribution_x(-x_width/2,x_width/2);
-    std::uniform_real_distribution<double> distribution_y(-y_width/2,y_width/2);
-    std::uniform_real_distribution<double> distribution_yaw(-M_PI/2,M_PI/2);
+    // std::default_random_engine generator;
+    // std::uniform_real_distribution<double> distribution_x(-x_width/2,x_width/2);
+    // std::uniform_real_distribution<double> distribution_y(-y_width/2,y_width/2);
+    // std::uniform_real_distribution<double> distribution_yaw(-PI/2,PI/2);
 
-    // Init pose
-    weight = 1/numParticles;
-    pose.position.x = distribution_x(generator);
-    pose.position.y = distribution_y(generator);
-    pose.orientation.z = 0;
+    // // Init pose
+    // weight = 1/numParticles;
+    // pose.position.x = distribution_x(generator);
+    // pose.position.y = distribution_y(generator);
+    // pose.orientation.z = 0;
 
 }

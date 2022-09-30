@@ -2,9 +2,9 @@
 #define DATE_H
 
 #include <geometry_msgs/msg/pose.h>
-#include <random>
+// #include <random>
 
-#define M_PI 3.1415926535897932384626433832795
+#define PI 3.1415926535897932384626433832795
 
 
 class Particle
@@ -12,7 +12,6 @@ class Particle
 private:
     float weight;
     geometry_msgs__msg__Pose pose;
-    float a = M_PI;
 
 public:
     Particle();

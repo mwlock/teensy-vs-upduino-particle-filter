@@ -7,15 +7,9 @@
 class Utils
 {
 private:
-    float weight;
-    geometry_msgs__msg__Pose pose;
 
 public:
     Utils();
-
-    void initializParticle(Particle* particle, double x_width,double y_width);
-
-
 
     // void SetDate(int year, int month, int day);
 
