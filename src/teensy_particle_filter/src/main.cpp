@@ -16,9 +16,12 @@
 #include <vector>
 
 // Config headers
-# include "../config/motion_model.h"
-# include "../config/sensor_model.h"
-# include "../config/mcl.h"
+#include "../config/motion_model.h"
+#include "../config/sensor_model.h"
+#include "../config/mcl.h"
+
+// Include map
+// #include "../include/map.h"
 
 #if !defined(MICRO_ROS_TRANSPORT_ARDUINO_SERIAL)
 #error This example is only avaliable for Arduino framework with serial transport.
@@ -204,8 +207,8 @@ void setup() {
   // =                                                                                                                                                =
   // ==================================================================================================================================================
 
-  Map mapReader = Map("epuck_world_map.pgm");
-  occupancy_map = mapReader.getMap();
+  Map mapReader = Map();
+  // occupancy_map = mapReader.getMap();
 
   // TODO : get sensor model
 
@@ -215,11 +218,11 @@ void setup() {
   // =                                                                                                                                                =
   // ==================================================================================================================================================
 
- for (int i = 0; i < num_of_particles; i++) {
-    Particle particle = Particle();                 // Create new particle
-    particle.initParticle(3,3,num_of_particles);    // Init the particles
-    particles.push_back(particle);                  // Append particle to the vector (dynamic list)
-  }
+//  for (int i = 0; i < num_of_particles; i++) {
+//     Particle particle = Particle();                 // Create new particle
+//     particle.initParticle(3,3,num_of_particles);    // Init the particles
+//     particles.push_back(particle);                  // Append particle to the vector (dynamic list)
+//   }
 
   msg.data = 0;
 }

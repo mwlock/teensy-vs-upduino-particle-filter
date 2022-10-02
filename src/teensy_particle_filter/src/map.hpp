@@ -2,8 +2,10 @@
 #define MAP_H
 
 #include <iostream> // cout, cerr
-#include <fstream> // ifstream
-#include <sstream> // stringstream
+// #include <fstream> // ifstream
+// #include <sstream> // stringstream
+
+#include "../include/map.h"
 
 class Map
 {
@@ -13,7 +15,7 @@ private:
     float ** map;
 
 public:
-    Map(std::string file_name);
+    Map();
 
     int getColumns();
     int getRows();
