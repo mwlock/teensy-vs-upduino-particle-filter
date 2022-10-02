@@ -11,11 +11,12 @@ class Particle
 {
 private:
     float weight;
-    geometry_msgs__msg__Pose pose;
 
 public:
-    Particle();
 
+    geometry_msgs__msg__Pose pose;
+
+    Particle();
     void setPose();
     void initParticle(double x_width,double y_width, int numParticles);
 };

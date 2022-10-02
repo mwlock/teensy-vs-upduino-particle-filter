@@ -8,6 +8,12 @@
 sudo apt install -y git cmake python3-pip
 ```
 
+# Running micro-ROS
+
+```
+ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyACM0
+```
+
 ## Useful guides
 
 - [Teensy with Arduino](https://micro.ros.org/docs/tutorials/core/teensy_with_arduino/)

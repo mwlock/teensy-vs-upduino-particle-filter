@@ -9,19 +9,15 @@
 #include <nav_msgs/msg/odometry.h>
 #include <sensor_msgs/msg/laser_scan.h>
 #include <geometry_msgs/msg/pose_array.h>
+#include <geometry_msgs/msg/pose.h>
 
 #include "particle.hpp"
+#include "particleFilter.hpp"
 #include "map.hpp"
-
-#include <vector>
 
 // Config headers
 #include "../config/motion_model.h"
 #include "../config/sensor_model.h"
-#include "../config/mcl.h"
-
-// Include map
-// #include "../include/map.h"
 
 #if !defined(MICRO_ROS_TRANSPORT_ARDUINO_SERIAL)
 #error This example is only avaliable for Arduino framework with serial transport.
@@ -52,10 +48,19 @@ rcl_timer_t timer;
 
 // Particle filter
 float** occupancy_map;
-std::vector<Particle> particles;
+ParticleFilter particleFilter;
 
 #define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){error_loop();}}
 #define RCSOFTCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){}}
+
+// Global variables
+bool ledStatus = false;
+
+bool lastUsedOdomInitialised = false;
+bool lastOdomInitialised = false;
+nav_msgs__msg__Odometry lastUsedOdom;
+nav_msgs__msg__Odometry lastOdom;
+
 
 // Error handle loop
 void error_loop() {
@@ -64,11 +69,31 @@ void error_loop() {
   }
 }
 
+// ==================================================================================================================================================
+// =                                                                                                                                                =
+// =                                                         Timer callback                                                                         =
+// =                                                                                                                                                =
+// ==================================================================================================================================================
+
 void timer_callback(rcl_timer_t * timer, int64_t last_call_time) {
   RCLC_UNUSED(last_call_time);
+  // Send data
   if (timer != NULL) {
     RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
     msg.data++;
+
+    // Alive alert, alert alive
+    ledStatus = !ledStatus;
+    digitalWrite(LED_BUILTIN, ledStatus);
+
+    // Check if odom is initalised (jump out function if not)
+    if (!lastUsedOdomInitialised || !lastOdomInitialised){
+      return ;
+    }
+
+    // Update particle set
+
+    
   }
 }
 
@@ -90,11 +115,18 @@ void odom_subscription_callback(const void *msgin) {
   // Turn on LED
   // digitalWrite(LED_BUILTIN, HIGH);
 
-//   RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
-//   msg.data++;
-//   // const geometry_msgs__msg__Twist * msg = (const geometry_msgs__msg__Twist *)msgin;
-//   // if velocity in x direction is 0 turn off LED, if 1 turn on LED
-//   // digitalWrite(LED_PIN, (msg->linear.x == 0) ? LOW : HIGH);
+  //   RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
+  //   msg.data++;
+
+  const nav_msgs__msg__Odometry * msg = (const nav_msgs__msg__Odometry *)msgin;
+
+  // Set lastOdom
+  lastOdomInitialised = true;
+  lastOdom = *msg;
+
+  // const geometry_msgs__msg__Twist * msg = (const geometry_msgs__msg__Twist *)msgin;
+  // if velocity in x direction is 0 turn off LED, if 1 turn on LED
+  // digitalWrite(LED_BUILTIN, (msg->linear.x == 0) ? LOW : HIGH);
 }
 
 // Odometry message cb
@@ -113,10 +145,16 @@ void setup() {
   delay(2000);
 
   // LED setup and start up indicator
+  ledStatus = false;
   pinMode(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(1000);
-  digitalWrite(LED_BUILTIN, LOW);
+  digitalWrite(LED_BUILTIN, ledStatus);
+
+  int on_off_times = 3;
+  for (int i = 0; i < on_off_times*2; i++) {
+    ledStatus = !ledStatus;
+    delay(200); 
+    digitalWrite(LED_BUILTIN, ledStatus);
+  }
 
   allocator = rcl_get_default_allocator();
 
@@ -207,7 +245,7 @@ void setup() {
   // =                                                                                                                                                =
   // ==================================================================================================================================================
 
-  Map mapReader = Map();
+  // Map mapReader = Map();
   // occupancy_map = mapReader.getMap();
 
   // TODO : get sensor model
@@ -218,11 +256,8 @@ void setup() {
   // =                                                                                                                                                =
   // ==================================================================================================================================================
 
-//  for (int i = 0; i < num_of_particles; i++) {
-//     Particle particle = Particle();                 // Create new particle
-//     particle.initParticle(3,3,num_of_particles);    // Init the particles
-//     particles.push_back(particle);                  // Append particle to the vector (dynamic list)
-//   }
+  particleFilter = ParticleFilter();    // Create particle filter
+  particleFilter.initParticleFilter();  // Init particle filter
 
   msg.data = 0;
 }
