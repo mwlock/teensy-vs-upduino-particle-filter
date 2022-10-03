@@ -30,8 +30,8 @@ geometry_msgs__msg__Pose MotionModel::sampleMotionModel(
             yq = previous_xt.orientation.y;
             zq = previous_xt.orientation.z;
             wq = previous_xt.orientation.w;
-            Quaternion quat = {wq,xq,yq,zq};
-            EulerAngles eulerAngles = ToEulerAngles(quat); 
+            quat = {wq,xq,yq,zq};
+            eulerAngles = ToEulerAngles(quat); 
             double theta_prime = eulerAngles.yaw;
 
             // Calculate deltas
@@ -47,5 +47,29 @@ geometry_msgs__msg__Pose MotionModel::sampleMotionModel(
             dt = delta_translation;
             d2 = delta_rotation2;
         }
+
+        // Uncertainties
+        double alpha1 = ALPHA1;
+        double alpha2 = ALPHA2;
+        double alpha3 = ALPHA4;
+        double alpha4 = ALPHA4;
+
+        // Standard deviation
+        double std_dev_d1 = sqrt((alpha1 * pow(d1,2)) + (alpha2 * pow(dt,2)));
+        double std_dev_dt = sqrt((alpha3 * pow(dt,2)) + (alpha4 * pow(d1,2)) + (alpha4 * pow(d2,2)));
+        double std_dev_d2 = sqrt((alpha1 * pow(d2,2)) + (alpha2 * pow(dt,2)));
+
+        // Determine noise on motion model
+        double noised1 = 0.0;
+        double noisedt = 0.0;
+        double noised2 = 0.0;
+
+        // TODO : finish this
+        // if (std_dev_d1 > 0)
+        //     noised1 = np.random.normal(scale=std_dev_d1);
+        // if std_dev_dt > 0:
+        //     noisedt = np.random.normal(scale=std_dev_dt)
+        // if std_dev_d2 > 0:
+        //     noised2 = np.random.normal(scale=std_dev_d2)
 
     }

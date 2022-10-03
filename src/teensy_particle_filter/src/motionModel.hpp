@@ -9,6 +9,8 @@
 
 #include "quat.hpp"
 
+#include "../config/motion_model.h"
+
 #define MOVED_TOO_CLOSE 0.01
 
 class MotionModel
