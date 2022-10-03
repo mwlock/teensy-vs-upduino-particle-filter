@@ -65,11 +65,11 @@ geometry_msgs__msg__Pose MotionModel::sampleMotionModel(
         double noised2 = 0.0;
 
         // TODO : finish this
-        // if (std_dev_d1 > 0)
-        //     noised1 = np.random.normal(scale=std_dev_d1);
-        // if std_dev_dt > 0:
-        //     noisedt = np.random.normal(scale=std_dev_dt)
-        // if std_dev_d2 > 0:
-        //     noised2 = np.random.normal(scale=std_dev_d2)
+        if (std_dev_d1 > 0)
+            noised1 = np.random.normal(scale=std_dev_d1);
+        if std_dev_dt > 0:
+            noisedt = np.random.normal(scale=std_dev_dt)
+        if std_dev_d2 > 0:
+            noised2 = np.random.normal(scale=std_dev_d2)
 
     }

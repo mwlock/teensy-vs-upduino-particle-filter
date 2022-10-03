@@ -48,3 +48,21 @@ EulerAngles ToEulerAngles(Quaternion q) {
 
     return angles;
 }
+
+Quaternion EulerToQuaternion(EulerAngles angles) {
+    Quaternion q;
+
+    double cy = std::cos(angles.yaw * 0.5);
+    double sy = std::sin(angles.yaw * 0.5);
+    double cr = std::cos(angles.roll * 0.5);
+    double sr = std::sin(angles.roll * 0.5);
+    double cp = std::cos(angles.pitch * 0.5);
+    double sp = std::sin(angles.pitch * 0.5);
+
+    q.w = cy * cr * cp + sy * sr * sp;
+    q.x = cy * sr * cp - sy * cr * sp;
+    q.y = cy * cr * sp + sy * sr * cp;
+    q.z = sy * cr * cp - cy * sr * sp;
+
+    return q;
+}
