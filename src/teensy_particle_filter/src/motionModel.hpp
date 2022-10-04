@@ -6,8 +6,10 @@
 #include <nav_msgs/msg/odometry.h>
 
 #include <math.h>
+#include <random>
 
 #include "quat.hpp"
+#include "distributions.hpp"
 
 #include "../config/motion_model.h"
 
@@ -28,11 +30,6 @@ public:
         geometry_msgs__msg__Pose prevOdom
     );
 
-    // void SetDate(int year, int month, int day);
-
-    // int getYear() { return m_year; }
-    // int getMonth() { return m_month; }
-    // int getDay()  { return m_day; }
 };
 
 #endif

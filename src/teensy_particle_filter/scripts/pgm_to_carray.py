@@ -61,6 +61,6 @@ with open(choice, 'rb') as pgmf:
     array_string = "bool map[{}][{}] = {}".format(im_numpy.shape[0],im_numpy.shape[1],array_string)
     map_string = '#ifndef MAP_H\n#define MAP_H\n{}\n#endif\n'.format(array_string)    
 
-    text_file = open('../include/map.h', "w")
+    text_file = open('../include/map_array.h', "w")
     text_file.write(map_string)
     text_file.close()

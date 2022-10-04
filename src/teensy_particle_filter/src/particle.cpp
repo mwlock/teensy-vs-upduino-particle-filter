@@ -1,17 +1,13 @@
 #include "particle.hpp"
 
-// Get mathematical constants
-#include <cmath>
-#include <iostream>
-#include "quat.hpp"
-#define _USE_MATH_DEFINES
-
 // Particle constructor
 Particle::Particle()
-{
+{   
+    // Initialise the particle
     weight = 0.0;
     pose.orientation = {0,0,0,0};
     pose.position = {0,0,0};
+
 }
 
 void Particle::initParticle(double x_width,double y_width, int numParticles){
@@ -36,7 +32,7 @@ void Particle::initParticle(double x_width,double y_width, int numParticles){
     pose.position.x = distribution_x(generator);
     pose.position.y = distribution_y(generator);
     EulerAngles angle = {0,0,distribution_yaw(generator)};
-    Quaternion q = EulerToQuaternion(angle);
+    Quaternion q = Quat::EulerToQuaternion(angle);
     pose.orientation.x = q.x;
     pose.orientation.y = q.y;
     pose.orientation.z = q.z;

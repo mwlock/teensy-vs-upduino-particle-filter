@@ -13,7 +13,6 @@
 
 #include "particle.hpp"
 #include "particleFilter.hpp"
-#include "map.hpp"
 
 // Config headers
 #include "../config/motion_model.h"
@@ -94,7 +93,9 @@ void timer_callback(rcl_timer_t * timer, int64_t last_call_time) {
     // Update particle set
     particleFilter.updateParticles();
 
-    
+    // Update the latest odom used
+    particleFilter.updatePreviousOdom(lastUsedOdom);
+
   }
 }
 
@@ -125,6 +126,8 @@ void odom_subscription_callback(const void *msgin) {
   lastOdomInitialised = true;
   lastOdom = *msg;
 
+  particleFilter.updateLatestOdom(lastOdom);
+
   // const geometry_msgs__msg__Twist * msg = (const geometry_msgs__msg__Twist *)msgin;
   // if velocity in x direction is 0 turn off LED, if 1 turn on LED
   // digitalWrite(LED_BUILTIN, (msg->linear.x == 0) ? LOW : HIGH);
@@ -132,6 +135,10 @@ void odom_subscription_callback(const void *msgin) {
 
 // Odometry message cb
 void scan_subscription_callback(const void *msgin) {
+
+  // Get the message
+  const sensor_msgs__msg__LaserScan * msg = (const sensor_msgs__msg__LaserScan *)msgin;
+  particleFilter.updateLatestLaserScan(*msg);
 
   // Turn on LED
   digitalWrite(LED_BUILTIN, HIGH);
@@ -245,9 +252,6 @@ void setup() {
   // =                                                 Read map data and get sensor model                                                             =
   // =                                                                                                                                                =
   // ==================================================================================================================================================
-
-  // Map mapReader = Map();
-  // occupancy_map = mapReader.getMap();
 
   // TODO : get sensor model
 

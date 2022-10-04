@@ -1,5 +1,8 @@
 #include  "motionModel.hpp"
 
+MotionModel::MotionModel() {
+}
+
 geometry_msgs__msg__Pose MotionModel::sampleMotionModel(
         geometry_msgs__msg__Pose previous_xt, // previous pose at time t
         geometry_msgs__msg__Pose latestOdom,
@@ -21,7 +24,7 @@ geometry_msgs__msg__Pose MotionModel::sampleMotionModel(
             zq = prevOdom.orientation.z;
             wq = prevOdom.orientation.w;
             Quaternion quat = {wq,xq,yq,zq};
-            EulerAngles eulerAngles = ToEulerAngles(quat); 
+            EulerAngles eulerAngles = Quat::ToEulerAngles(quat); 
             theta = eulerAngles.yaw;
 
             double x_prime = previous_xt.position.x;
@@ -31,17 +34,17 @@ geometry_msgs__msg__Pose MotionModel::sampleMotionModel(
             zq = previous_xt.orientation.z;
             wq = previous_xt.orientation.w;
             quat = {wq,xq,yq,zq};
-            eulerAngles = ToEulerAngles(quat); 
+            eulerAngles = Quat::ToEulerAngles(quat); 
             double theta_prime = eulerAngles.yaw;
 
             // Calculate deltas
             double delta_translation = sqrt( pow(x-x_prime,2) + pow(y-y_prime,2) );
             double delta_rotation1 = 0.0;
             if (delta_translation > MOVED_TOO_CLOSE){
-                delta_rotation1 = angleDiff(atan2(y_prime - y, x_prime - x), theta);
+                delta_rotation1 = Quat::angleDiff(atan2(y_prime - y, x_prime - x), theta);
             }
-            double delta = angleDiff(theta_prime, theta);
-            double delta_rotation2 = angleDiff(delta, delta_rotation1);
+            double delta = Quat::angleDiff(theta_prime, theta);
+            double delta_rotation2 = Quat::angleDiff(delta, delta_rotation1);
             // return delta_rotation1, delta_translation, delta_rotation2
             d1 = delta_rotation1;
             dt = delta_translation;
@@ -63,13 +66,39 @@ geometry_msgs__msg__Pose MotionModel::sampleMotionModel(
         double noised1 = 0.0;
         double noisedt = 0.0;
         double noised2 = 0.0;
+        
+        // Sample from normal distribution
+        noised1 = Distributions::sampleNormal(0, std_dev_d1);
+        noisedt = Distributions::sampleNormal(0, std_dev_dt);
+        noised2 = Distributions::sampleNormal(0, std_dev_d2);
 
-        // TODO : finish this
-        if (std_dev_d1 > 0)
-            noised1 = np.random.normal(scale=std_dev_d1);
-        if std_dev_dt > 0:
-            noisedt = np.random.normal(scale=std_dev_dt)
-        if std_dev_d2 > 0:
-            noised2 = np.random.normal(scale=std_dev_d2)
+        double t_d1 = Quat::angleDiff(d1,noised1);
+        double t_dt = dt + noisedt;
+        double t_d2 = Quat::angleDiff(d2,noised2);
+        
+        // Calculate new pose
+        double new_x = x + (t_dt * cos(theta + t_d1));
+        double new_y = y + (t_dt * sin(theta + t_d1));
+        double new_theta = theta + t_d1 + t_d2;
 
-    }
+        // Convert to quaternion
+        EulerAngles eulerAngles = {0, 0, new_theta};
+        Quaternion quat = Quat::EulerToQuaternion(eulerAngles);
+        double new_xq = quat.x;
+        double new_yq = quat.y;
+        double new_zq = quat.z;
+        double new_wq = quat.w;
+
+        // Create new pose
+        geometry_msgs__msg__Pose newPose;
+        newPose.position.x = new_x;
+        newPose.position.y = new_y;
+        newPose.position.z = 0.0;
+        newPose.orientation.x = new_xq;
+        newPose.orientation.y = new_yq;
+        newPose.orientation.z = new_zq;
+        newPose.orientation.w = new_wq;
+
+        return newPose;        
+
+    }   

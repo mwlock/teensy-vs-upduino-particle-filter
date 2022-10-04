@@ -1,1 +1,1 @@
-#define likelihood_std_dev 0.0025
+#define LIKELIHOOD_STD_DEV 0.0025
