@@ -60,6 +60,9 @@ bool lastOdomInitialised = false;
 nav_msgs__msg__Odometry lastUsedOdom;
 nav_msgs__msg__Odometry lastOdom;
 
+//consts
+const int timeout_ms = 1000;
+
 
 // Error handle loop
 void error_loop() {
@@ -276,6 +279,10 @@ void setup() {
 
 void loop() {
   delay(100);
+
+  // Syncronize time
+  RCCHECK(rmw_uros_sync_session(timeout_ms));
+
   // Spin ros executors
   RCSOFTCHECK(rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100)));
   RCSOFTCHECK(rclc_executor_spin_some(&executor_odom_sub, RCL_MS_TO_NS(100)));
