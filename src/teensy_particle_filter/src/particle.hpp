@@ -7,9 +7,9 @@
 
 #include <random>
 
-// Get mathematical constants
-#include <cmath>
-#include <iostream>
+// uncomment for DEAD TEENSY
+// #include <cmath>
+// #include <iostream>
 #include "quat.hpp"
 
 #define PI 3.1415926535897932384626433832795

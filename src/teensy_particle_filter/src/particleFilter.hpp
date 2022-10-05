@@ -26,6 +26,8 @@
 #include <unistd.h>
 #include <time.h>
 
+#include <exception>
+
 class ParticleFilter
 {
 private:
@@ -36,13 +38,22 @@ private:
 
     bool updating;
 
-
     geometry_msgs__msg__Pose latestOdom;
     geometry_msgs__msg__Pose previousOdom;
     sensor_msgs__msg__LaserScan latestLaserScan;
     geometry_msgs__msg__PoseArray poseArray;
+    // geometry_msgs__msg__Pose poseArrayData[NUM_OF_PARTICLES];
+
+    bool lastUsedOdomInitialised;
+    bool lastOdomInitialised;
+
+    void (*printDebug)(const char*);
 
 public:
+
+    // Constructor that takes in function pointer as an argument
+    ParticleFilter(void (*callback)(const char*));
+
     ParticleFilter();
     void initParticleFilter();
     void updateParticles();
@@ -56,6 +67,9 @@ public:
 
     bool shouldResample();
     void resampleParticles();
+
+    // Check if odom is initalised 
+    bool isInitialised();
 
 };
 

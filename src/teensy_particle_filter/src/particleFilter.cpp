@@ -3,6 +3,32 @@
 
 extern int clock_gettime(clockid_t unused, struct timespec *tp);
 
+ParticleFilter::ParticleFilter(void (*callback)(const char*))
+{
+    this->initParticleFilter();
+    this->printDebug = callback;
+
+    updating = false;
+    motionModel = MotionModel();
+    sensorModel = SensorModel();
+
+    latestOdom = geometry_msgs__msg__Pose();
+    previousOdom = geometry_msgs__msg__Pose();
+    latestLaserScan = sensor_msgs__msg__LaserScan();
+
+    // Create pose array (malloc once to prevent memory leak)
+    this->poseArray = geometry_msgs__msg__PoseArray();
+    bool success = rosidl_runtime_c__String__assign(&poseArray.header.frame_id,"map");
+    poseArray.poses.size = NUM_OF_PARTICLES;
+    poseArray.poses.capacity = NUM_OF_PARTICLES;
+    poseArray.poses.data = (geometry_msgs__msg__Pose*)malloc(NUM_OF_PARTICLES * sizeof(geometry_msgs__msg__Pose));
+    // poseArray.poses.data = poseArrayData;
+
+    // Initialise last odoms
+    lastUsedOdomInitialised = false;
+    lastOdomInitialised = false;
+}
+
 ParticleFilter::ParticleFilter(){
     updating = false;
     motionModel = MotionModel();
@@ -18,6 +44,10 @@ ParticleFilter::ParticleFilter(){
     poseArray.poses.size = NUM_OF_PARTICLES;
     poseArray.poses.capacity = NUM_OF_PARTICLES;
     poseArray.poses.data = (geometry_msgs__msg__Pose*)malloc(NUM_OF_PARTICLES * sizeof(geometry_msgs__msg__Pose));
+
+    // Initialise last odoms
+    lastUsedOdomInitialised = false;
+    lastOdomInitialised = false;
 }
 
 void ParticleFilter::initParticleFilter(){
@@ -95,6 +125,13 @@ void ParticleFilter::updateParticles(){
 }
 
 void ParticleFilter::updateLatestOdom(nav_msgs__msg__Odometry odom){
+
+    // Set initial odom
+    if(!lastOdomInitialised){
+        lastOdomInitialised = true;
+        lastUsedOdomInitialised = true;
+    }
+
 
     // Update the latest odom
     if (!updating){
@@ -221,10 +258,40 @@ geometry_msgs__msg__PoseArray ParticleFilter::getPoseArray(){
     // poseArray.poses.capacity = NUM_OF_PARTICLES;
     // poseArray.poses.data = (geometry_msgs__msg__Pose*)malloc(NUM_OF_PARTICLES * sizeof(geometry_msgs__msg__Pose));
 
+    // send debug message
+    char msg[100];
+    sprintf(msg, "Pose array size: %d", NUM_OF_PARTICLES);
+    this->printDebug(msg);
+
     // Iterate through the particles and add them to the pose array
     for(int i = 0; i < NUM_OF_PARTICLES; i++){
-        poseArray.poses.data[i] = particles[i].pose;
+
+        // char str[100];
+        // sprintf(str, " Adding particle [%d]to pose array", i);
+
+        // publish debug message
+        // this->printDebug(str);
+
+        // Create string which contains pose of the particle
+        // char poseStr[100];
+        // sprintf(poseStr, "Particle [%d] pose: x: %f, y: %f, theta: %f", i, particles.at(i).pose.position.x, particles.at(i).pose.position.y, particles.at(i).pose.orientation.z);
+        // this->printDebug(poseStr);
+
+        // Print pose of the particle in pose array
+
+        // char poseArrayStr[100];
+        // sprintf(poseArrayStr, "Pose array pose: x: %f, y: %f, theta: %f", poseArray.poses.data[i].position.x, poseArray.poses.data[i].position.y, poseArray.poses.data[i].orientation.z);
+        // this->printDebug(poseArrayStr);
+
+        poseArray.poses.data[i] = particles.at(i).pose;
+
+        // publish debug message
+        // this->printDebug(" Added particle to pose array");
+
     }
+
+    // Debug message
+    this->printDebug("Iterated through pose array!");
 
     // Fill the message timestamp
     // struct timespec ts;
@@ -238,4 +305,12 @@ geometry_msgs__msg__PoseArray ParticleFilter::getPoseArray(){
     poseArray.header.stamp.nanosec = (u_int32_t)rmw_uros_epoch_nanos();
 
     return poseArray;
+}
+
+
+bool ParticleFilter::isInitialised(){
+
+    // Check if the particle filter is initialised
+    return (lastUsedOdomInitialised && lastOdomInitialised);
+
 }

@@ -10,6 +10,7 @@
 #include <sensor_msgs/msg/laser_scan.h>
 #include <geometry_msgs/msg/pose_array.h>
 #include <geometry_msgs/msg/pose.h>
+#include <std_msgs/msg/string.h>
 
 #include "particle.hpp"
 #include "particleFilter.hpp"
@@ -25,6 +26,8 @@
 // micro-ROS messages
 rcl_publisher_t publisher;
 rcl_publisher_t publisherPoseArray;
+rcl_publisher_t publisherDebug;
+
 rcl_subscription_t subscriber_odom;
 rcl_subscription_t subscriber_scan;
 std_msgs__msg__Int32 msg;
@@ -33,12 +36,14 @@ std_msgs__msg__Int32 msg;
 nav_msgs__msg__Odometry odometryMsg;
 sensor_msgs__msg__LaserScan laserScanMsg;
 geometry_msgs__msg__PoseArray poseArray;
+std_msgs__msg__String stringMsg;
 
 // Executors
 rclc_executor_t executor;
 rclc_executor_t executor_scan_sub;
 rclc_executor_t executor_odom_sub;
 rclc_executor_t executor_particle_cloud_pub;
+rclc_executor_t executor_string_pub;
 
 rclc_support_t support;
 rcl_allocator_t allocator;
@@ -55,20 +60,24 @@ ParticleFilter particleFilter;
 // Global variables
 bool ledStatus = false;
 
-bool lastUsedOdomInitialised = false;
-bool lastOdomInitialised = false;
 nav_msgs__msg__Odometry lastUsedOdom;
 nav_msgs__msg__Odometry lastOdom;
 
 //consts
 const int timeout_ms = 1000;
 
-
 // Error handle loop
 void error_loop() {
   while(1) {
     delay(100);
   }
+}
+
+// Publish debug message and take string as a parameter
+void publishDebugMessage(const char* message) {
+  stringMsg.data.data = (char*)message;
+  stringMsg.data.size = strlen(message);
+  RCSOFTCHECK(rcl_publish(&publisherDebug, &stringMsg, NULL));
 }
 
 // ==================================================================================================================================================
@@ -89,16 +98,26 @@ void timer_callback(rcl_timer_t * timer, int64_t last_call_time) {
     digitalWrite(LED_BUILTIN, ledStatus);
 
     // Check if odom is initalised (jump out function if not)
-    if (!lastUsedOdomInitialised || !lastOdomInitialised){
-      return ;
+    if (!particleFilter.isInitialised()){
+      return;
     }
+
+    publishDebugMessage("is initialised");
 
     // Update particle set
     particleFilter.updateParticles();
 
-    // Publish particle set
+    publishDebugMessage("updated particles");
+
+    // Calculate pose array
     geometry_msgs__msg__PoseArray particleCloud = particleFilter.getPoseArray();
+
+    publishDebugMessage("got pose array");
+
+    // Publish pose array
     RCSOFTCHECK(rcl_publish(&publisherPoseArray, &particleCloud, NULL));
+
+    publishDebugMessage("published pose array");
 
     // Calculate estimated pose
     // geometry_msgs__msg__Pose estimatedPose = particleFilter.etimatePose();
@@ -106,14 +125,11 @@ void timer_callback(rcl_timer_t * timer, int64_t last_call_time) {
     // Update the latest odom used
     particleFilter.updatePreviousOdom(lastUsedOdom);
 
+    publishDebugMessage("updated previous odom");
+
+
   }
 }
-
-  // ==================================================================================================================================================
-  // =                                                                                                                                                =
-  // =                                                         Particle                                                                               =
-  // =                                                                                                                                                =
-  // ==================================================================================================================================================
 
   // ==================================================================================================================================================
   // =                                                                                                                                                =
@@ -124,23 +140,13 @@ void timer_callback(rcl_timer_t * timer, int64_t last_call_time) {
 // Odometry message cb
 void odom_subscription_callback(const void *msgin) {
 
-  // Turn on LED
-  // digitalWrite(LED_BUILTIN, HIGH);
-
-  //   RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
-  //   msg.data++;
-
   const nav_msgs__msg__Odometry * msg = (const nav_msgs__msg__Odometry *)msgin;
 
   // Set lastOdom
-  lastOdomInitialised = true;
   lastOdom = *msg;
 
   particleFilter.updateLatestOdom(lastOdom);
 
-  // const geometry_msgs__msg__Twist * msg = (const geometry_msgs__msg__Twist *)msgin;
-  // if velocity in x direction is 0 turn off LED, if 1 turn on LED
-  // digitalWrite(LED_BUILTIN, (msg->linear.x == 0) ? LOW : HIGH);
 }
 
 // Odometry message cb
@@ -222,6 +228,18 @@ void setup() {
     ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, PoseArray),
     "particlecloud"));
 
+  // debug publisher
+  RCCHECK(rclc_publisher_init_default(
+    &publisherDebug,
+    &node,
+    ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, String),
+    "debug"));
+  // initDebugPublisher(&node);
+
+  // Make debug publisher
+  // DebugPublisher & debug_publisher = DebugPublisher::getInstance();
+  // debug_publisher.initPublisher(&node);
+
   // create timer,
   const unsigned int timer_timeout = 1000;
   RCCHECK(rclc_timer_init_default(
@@ -240,8 +258,8 @@ void setup() {
   RCCHECK(rclc_executor_init(&executor, &support.context, 1, &allocator));
   RCCHECK(rclc_executor_add_timer(&executor, &timer));
 
-  RCCHECK(rclc_executor_init(&executor_particle_cloud_pub, &support.context, 1, &allocator));
-  // RCCHECK(rclc_executor_add_timer(&executor, &timer));
+  RCCHECK(rclc_executor_init(&executor_particle_cloud_pub, &support.context, 1, &allocator)); // particle cloud publisher
+  RCCHECK(rclc_executor_init(&executor_string_pub, &support.context, 1, &allocator)); // string publisher
 
   // ==================================================================================================================================================
   // =                                                                                                                                                =
@@ -259,19 +277,11 @@ void setup() {
 
   // ==================================================================================================================================================
   // =                                                                                                                                                =
-  // =                                                 Read map data and get sensor model                                                             =
+  // =                                                         Particle fitler init                                                                   =
   // =                                                                                                                                                =
   // ==================================================================================================================================================
 
-  // TODO : get sensor model
-
-  // ==================================================================================================================================================
-  // =                                                                                                                                                =
-  // =                                                         Particle  init                                                                         =
-  // =                                                                                                                                                =
-  // ==================================================================================================================================================
-
-  particleFilter = ParticleFilter();    // Create particle filter
+  particleFilter = ParticleFilter(publishDebugMessage);    // Create particle filter
   particleFilter.initParticleFilter();  // Init particle filter
 
   msg.data = 0;
@@ -288,5 +298,6 @@ void loop() {
   RCSOFTCHECK(rclc_executor_spin_some(&executor_odom_sub, RCL_MS_TO_NS(100)));
   RCSOFTCHECK(rclc_executor_spin_some(&executor_scan_sub, RCL_MS_TO_NS(100)));
   RCSOFTCHECK(rclc_executor_spin_some(&executor_particle_cloud_pub, RCL_MS_TO_NS(100)));
+  RCSOFTCHECK(rclc_executor_spin_some(&executor_string_pub, RCL_MS_TO_NS(100)));
 }
 
