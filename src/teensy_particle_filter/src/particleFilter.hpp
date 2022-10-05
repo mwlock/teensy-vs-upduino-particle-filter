@@ -10,6 +10,22 @@
 
 #include "../config/mcl.h"
 
+#include <geometry_msgs/msg/pose_array.h>
+#include "rosidl_runtime_c/string_functions.h"
+#include "geometry_msgs/msg/detail/pose_array__functions.h"
+#include <micro_ros_platformio.h>
+
+#include <rcl/error_handling.h>
+#include <rclc/executor.h>
+
+#include <std_msgs/msg/header.h>
+
+#include <nav_msgs/msg/odometry.h>
+
+#include <stdio.h>
+#include <unistd.h>
+#include <time.h>
+
 class ParticleFilter
 {
 private:
@@ -24,6 +40,7 @@ private:
     geometry_msgs__msg__Pose latestOdom;
     geometry_msgs__msg__Pose previousOdom;
     sensor_msgs__msg__LaserScan latestLaserScan;
+    geometry_msgs__msg__PoseArray poseArray;
 
 public:
     ParticleFilter();
@@ -35,6 +52,7 @@ public:
     void updateLatestLaserScan(sensor_msgs__msg__LaserScan laserScan);
 
     geometry_msgs__msg__Pose etimatePose();
+    geometry_msgs__msg__PoseArray getPoseArray();
 
     bool shouldResample();
     void resampleParticles();

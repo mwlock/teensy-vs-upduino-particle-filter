@@ -1,6 +1,8 @@
 #include "particleFilter.hpp"
 #include "particle.hpp"
 
+extern int clock_gettime(clockid_t unused, struct timespec *tp);
+
 ParticleFilter::ParticleFilter(){
     updating = false;
     motionModel = MotionModel();
@@ -9,6 +11,13 @@ ParticleFilter::ParticleFilter(){
     latestOdom = geometry_msgs__msg__Pose();
     previousOdom = geometry_msgs__msg__Pose();
     latestLaserScan = sensor_msgs__msg__LaserScan();
+
+    // Create pose array (malloc once to prevent memory leak)
+    geometry_msgs__msg__PoseArray poseArray = geometry_msgs__msg__PoseArray();
+    bool success = rosidl_runtime_c__String__assign(&poseArray.header.frame_id,"map");
+    poseArray.poses.size = NUM_OF_PARTICLES;
+    poseArray.poses.capacity = NUM_OF_PARTICLES;
+    poseArray.poses.data = (geometry_msgs__msg__Pose*)malloc(NUM_OF_PARTICLES * sizeof(geometry_msgs__msg__Pose));
 }
 
 void ParticleFilter::initParticleFilter(){
@@ -70,7 +79,7 @@ void ParticleFilter::updateParticles(){
     }
 
     // Estimate the pose of the robot
-    geometry_msgs__msg__Pose estimatedPose = etimatePose();
+    // geometry_msgs__msg__Pose estimatedPose = etimatePose();
 
     //TODO Publish new path
 
@@ -197,4 +206,36 @@ void ParticleFilter::resampleParticles(){
         particles.push_back(particle);
     }
 
+}
+
+// Return array of poses
+geometry_msgs__msg__PoseArray ParticleFilter::getPoseArray(){
+
+    // https://answers.ros.org/question/381123/how-to-generate-header-stamp-rpi-pico/
+    // https://github.com/micro-ROS/freertos_apps/issues/62
+
+    // Create a new pose array
+    // geometry_msgs__msg__PoseArray poseArray = geometry_msgs__msg__PoseArray();
+    // bool success = rosidl_runtime_c__String__assign(&poseArray.header.frame_id,"map");
+    // poseArray.poses.size = NUM_OF_PARTICLES;
+    // poseArray.poses.capacity = NUM_OF_PARTICLES;
+    // poseArray.poses.data = (geometry_msgs__msg__Pose*)malloc(NUM_OF_PARTICLES * sizeof(geometry_msgs__msg__Pose));
+
+    // Iterate through the particles and add them to the pose array
+    for(int i = 0; i < NUM_OF_PARTICLES; i++){
+        poseArray.poses.data[i] = particles[i].pose;
+    }
+
+    // Fill the message timestamp
+    // struct timespec ts;
+    // clock_gettime(CLOCK_REALTIME, &ts);
+    // poseArray.header.stamp.sec = ts.tv_sec;
+    // poseArray.header.stamp.nanosec = ts.tv_nsec;
+
+    // Fill the message timestamp
+    // https://github.com/micro-ROS/micro_ros_arduino/issues/1122
+    poseArray.header.stamp.sec = (u_int16_t)(rmw_uros_epoch_millis()/1000);
+    poseArray.header.stamp.nanosec = (u_int32_t)rmw_uros_epoch_nanos();
+
+    return poseArray;
 }

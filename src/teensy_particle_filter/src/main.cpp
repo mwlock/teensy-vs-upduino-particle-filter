@@ -32,7 +32,7 @@ std_msgs__msg__Int32 msg;
 // Message types
 nav_msgs__msg__Odometry odometryMsg;
 sensor_msgs__msg__LaserScan laserScanMsg;
-geometry_msgs__msg__PoseArray msgPoseArray;
+geometry_msgs__msg__PoseArray poseArray;
 
 // Executors
 rclc_executor_t executor;
@@ -92,6 +92,13 @@ void timer_callback(rcl_timer_t * timer, int64_t last_call_time) {
 
     // Update particle set
     particleFilter.updateParticles();
+
+    // Publish particle set
+    geometry_msgs__msg__PoseArray particleCloud = particleFilter.getPoseArray();
+    RCSOFTCHECK(rcl_publish(&publisherPoseArray, &particleCloud, NULL));
+
+    // Calculate estimated pose
+    // geometry_msgs__msg__Pose estimatedPose = particleFilter.etimatePose();
 
     // Update the latest odom used
     particleFilter.updatePreviousOdom(lastUsedOdom);
@@ -210,7 +217,7 @@ void setup() {
     &publisherPoseArray,
     &node,
     ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, PoseArray),
-    "particlecloud_teensy"));
+    "particlecloud"));
 
   // create timer,
   const unsigned int timer_timeout = 1000;
