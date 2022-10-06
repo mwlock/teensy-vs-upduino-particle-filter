@@ -10,7 +10,13 @@ Particle::Particle()
 
 }
 
-void Particle::initParticle(double x_width,double y_width, int numParticles){
+void Particle::initParticle(
+    int numParticles,
+    std::mt19937 generator,
+    std::uniform_real_distribution<double> distribution_x,
+    std::uniform_real_distribution<double> distribution_y,
+    std::uniform_real_distribution<double> distribution_yaw
+    ){
     /**
      * Ititalise pose of a partile
      * https://cplusplus.com/reference/random/normal_distribution/
@@ -22,19 +28,56 @@ void Particle::initParticle(double x_width,double y_width, int numParticles){
      * @param numPartciles number of particles being generated
      */
 
-    std::default_random_engine generator;
-    std::uniform_real_distribution<double> distribution_x(-x_width/2,x_width/2);
-    std::uniform_real_distribution<double> distribution_y(-y_width/2,y_width/2);
-    std::uniform_real_distribution<double> distribution_yaw(-PI/2,PI/2);
+    // Init pose
+    weight = 1/double(numParticles);
+    pose = Quat::poseFromXYZRPY(distribution_x(generator), 
+                                distribution_y(generator), 
+                                0, 
+                                0, 0, distribution_yaw(generator));
+}
+
+void Particle::initParticle(
+    double x,
+    double y,
+    double weight
+    ){
+    /**
+     * Ititalise pose of a partile
+     * 
+     *
+     * @param x x position of particle
+     * @param y y position of particle
+     * @param weight weight of particle
+     */
 
     // Init pose
-    weight = 1/numParticles;
-    pose.position.x = distribution_x(generator);
-    pose.position.y = distribution_y(generator);
-    EulerAngles angle = {0,0,distribution_yaw(generator)};
+    this->weight = weight;
+    pose.position.x = x;
+    pose.position.y = y;
+    EulerAngles angle = {0,0,0};
     Quaternion q = Quat::EulerToQuaternion(angle);
     pose.orientation.x = q.x;
     pose.orientation.y = q.y;
     pose.orientation.z = q.z;
     pose.orientation.w = q.w;
+}
+
+void Particle::initParticle(
+    double x,
+    double y,
+    double yaw,
+    double weight
+    ){
+    /**
+     * Ititalise pose of a partile
+     * 
+     *
+     * @param x x position of particle
+     * @param y y position of particle
+     * @param yaw yaw of particle
+     */
+
+    // Init pose
+    this->weight = weight;
+    this->pose = Quat::poseFromXYZRPY(x, y, 0, 0, 0, yaw);
 }

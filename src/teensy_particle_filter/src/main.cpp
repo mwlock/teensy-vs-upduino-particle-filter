@@ -19,6 +19,9 @@
 #include "../config/motion_model.h"
 #include "../config/sensor_model.h"
 
+// Random numbers
+#include "FastRNG.hpp"
+
 #if !defined(MICRO_ROS_TRANSPORT_ARDUINO_SERIAL)
 #error This example is only avaliable for Arduino framework with serial transport.
 #endif
@@ -50,8 +53,9 @@ rcl_allocator_t allocator;
 rcl_node_t node;
 rcl_timer_t timer;
 
+#include <Entropy.h>
+
 // Particle filter
-float** occupancy_map;
 ParticleFilter particleFilter;
 
 #define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){error_loop();}}
@@ -59,8 +63,6 @@ ParticleFilter particleFilter;
 
 // Global variables
 bool ledStatus = false;
-
-nav_msgs__msg__Odometry lastUsedOdom;
 nav_msgs__msg__Odometry lastOdom;
 
 //consts
@@ -88,6 +90,9 @@ void publishDebugMessage(const char* message) {
 
 void timer_callback(rcl_timer_t * timer, int64_t last_call_time) {
   RCLC_UNUSED(last_call_time);
+
+  publishDebugMessage("Timer callback");
+
   // Send data
   if (timer != NULL) {
     RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
@@ -102,30 +107,24 @@ void timer_callback(rcl_timer_t * timer, int64_t last_call_time) {
       return;
     }
 
-    publishDebugMessage("is initialised");
-
     // Update particle set
     particleFilter.updateParticles();
-
-    publishDebugMessage("updated particles");
+    // publishDebugMessage("updated particles");
 
     // Calculate pose array
     geometry_msgs__msg__PoseArray particleCloud = particleFilter.getPoseArray();
-
-    publishDebugMessage("got pose array");
+    // publishDebugMessage("got pose array");
 
     // Publish pose array
     RCSOFTCHECK(rcl_publish(&publisherPoseArray, &particleCloud, NULL));
-
-    publishDebugMessage("published pose array");
+    // publishDebugMessage("published pose array");
 
     // Calculate estimated pose
     // geometry_msgs__msg__Pose estimatedPose = particleFilter.etimatePose();
 
     // Update the latest odom used
-    particleFilter.updatePreviousOdom(lastUsedOdom);
-
-    publishDebugMessage("updated previous odom");
+    particleFilter.updatePreviousOdom();
+    // publishDebugMessage("updated previous odom");
 
 
   }
@@ -142,10 +141,30 @@ void odom_subscription_callback(const void *msgin) {
 
   const nav_msgs__msg__Odometry * msg = (const nav_msgs__msg__Odometry *)msgin;
 
-  // Set lastOdom
-  lastOdom = *msg;
+  // Copy msg to lastOdom field by field
+  lastOdom.header = msg->header;
+  lastOdom.child_frame_id = msg->child_frame_id;
+  lastOdom.pose.pose.position.x = msg->pose.pose.position.x;
+  lastOdom.pose.pose.position.y = msg->pose.pose.position.y;
+  lastOdom.pose.pose.position.z = msg->pose.pose.position.z;
+  lastOdom.pose.pose.orientation.x = msg->pose.pose.orientation.x;
+  lastOdom.pose.pose.orientation.y = msg->pose.pose.orientation.y;
+  lastOdom.pose.pose.orientation.z = msg->pose.pose.orientation.z;
+  lastOdom.pose.pose.orientation.w = msg->pose.pose.orientation.w;
+  lastOdom.twist.twist.angular.x = msg->twist.twist.angular.x;
+  lastOdom.twist.twist.angular.y = msg->twist.twist.angular.y;
+  lastOdom.twist.twist.angular.z = msg->twist.twist.angular.z;
+  lastOdom.twist.twist.linear.x = msg->twist.twist.linear.x;
+  lastOdom.twist.twist.linear.y = msg->twist.twist.linear.y;
+  lastOdom.twist.twist.linear.z = msg->twist.twist.linear.z; 
+
+  // Print pose of latest odom
+  char buffer[100];
+  sprintf(buffer, "Odom poose: %f, %f, %f", lastOdom.pose.pose.position.x, lastOdom.pose.pose.position.y, lastOdom.pose.pose.position.z);
+  publishDebugMessage(buffer);
 
   particleFilter.updateLatestOdom(lastOdom);
+  publishDebugMessage("updated latest odom");
 
 }
 
@@ -162,6 +181,9 @@ void scan_subscription_callback(const void *msgin) {
 }
 
 void setup() {
+
+  // Initialise Entropy
+  Entropy.Initialize();
 
   // Configure serial transport
   Serial.begin(115200);
@@ -277,12 +299,11 @@ void setup() {
 
   // ==================================================================================================================================================
   // =                                                                                                                                                =
-  // =                                                         Particle fitler init                                                                   =
+  // =                                                          Create particle filter                                                                =
   // =                                                                                                                                                =
   // ==================================================================================================================================================
 
   particleFilter = ParticleFilter(publishDebugMessage);    // Create particle filter
-  particleFilter.initParticleFilter();  // Init particle filter
 
   msg.data = 0;
 }
@@ -299,5 +320,43 @@ void loop() {
   RCSOFTCHECK(rclc_executor_spin_some(&executor_scan_sub, RCL_MS_TO_NS(100)));
   RCSOFTCHECK(rclc_executor_spin_some(&executor_particle_cloud_pub, RCL_MS_TO_NS(100)));
   RCSOFTCHECK(rclc_executor_spin_some(&executor_string_pub, RCL_MS_TO_NS(100)));
+
+  if (!particleFilter.isParticlesInitialised()){
+
+    delay(100);      
+    particleFilter.initParticleFilter();
+    publishDebugMessage("Particles initialised");
+
+    // ==================================================================================================================================================
+    // =                                                                                                                                                =
+    // =                                                     Test the gaussian random numers                                                            =
+    // =                                                                                                                                                =
+    // ==================================================================================================================================================
+
+    // delay(1000);
+    // const int32_t N = 10000;
+    // int32_t samples[N];
+    // // FastRNG gen;
+    // double mean = 0.0, var = 0.0; 
+    // elapsedMillis timer = 0;
+    // for (int32_t i = 0; i < N; i++)
+    // {
+    //   samples[i] = normalDistribution(17.0, 2.0); 
+    //   mean += samples[i];
+    // }
+    // mean /= (N);
+    // for (int32_t i = 0; i < N; i++)
+    // {
+    //   var += (samples[i] - mean)*(samples[i] - mean); 
+    // }
+    // const uint32_t t = timer;
+    
+    // // Publish mean and standard deviation to debug topic
+    // char buffer[100];
+    // sprintf(buffer, "Mean: %f, Std: %f, Time: %d", mean, sqrt(var/(N-1)), t);
+    // publishDebugMessage(buffer);
+
+  }
+
 }
 

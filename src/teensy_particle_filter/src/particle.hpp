@@ -11,6 +11,7 @@
 // #include <cmath>
 // #include <iostream>
 #include "quat.hpp"
+#include <stdio.h>
 
 #define PI 3.1415926535897932384626433832795
 
@@ -26,7 +27,26 @@ public:
 
     Particle();
     void setPose();
-    void initParticle(double x_width,double y_width, int numParticles);
+    void initParticle(
+        int numParticles,
+        std::mt19937 generator,
+        std::uniform_real_distribution<double> distribution_x,
+        std::uniform_real_distribution<double> distribution_y,
+        std::uniform_real_distribution<double> distribution_yaw
+    );
+
+    void initParticle(
+        double x,
+        double y,
+        double yaw
+    );
+
+    void initParticle(
+    double x,
+    double y,
+    double theta,
+    double weight
+);
 };
 
 #endif

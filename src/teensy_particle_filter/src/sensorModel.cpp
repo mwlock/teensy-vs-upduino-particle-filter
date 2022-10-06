@@ -69,8 +69,9 @@ SimplePose SensorModel::calculateMapPose(geometry_msgs__msg__Pose particlePose){
     // Calculate the map pose
     mapPose.x = particlePose.position.x;
     mapPose.y = particlePose.position.y;
-    Quaternion q = {particlePose.orientation.w, particlePose.orientation.x, particlePose.orientation.y, particlePose.orientation.z};
-    mapPose.theta = Quat::ToEulerAngles(q).yaw;
+    mapPose.theta = Quat::yawFromPose(particlePose);
+    // Quaternion q = {particlePose.orientation.w, particlePose.orientation.x, particlePose.orientation.y, particlePose.orientation.z};
+    // mapPose.theta = Quat::ToEulerAngles(q).yaw;
 
     // Determine the pose of the particle in the map
     mapPose.x = mapPose.x - MAP_ORIGIN_X;
@@ -86,7 +87,7 @@ double SensorModel::closestObstacle(double x, double y){
     int MAP_WIDTH = sizeof(map_array[0]) / sizeof(bool); 
 
     // Find the closest obstacle to the particle
-    double closestObstacle = 1000000;
+    double closestObstacle = std::numeric_limits<double>::max();
     for(int i = 0; i < MAP_HEIGHT; i++){
         for(int j = 0; j < MAP_WIDTH; j++){
             if(map_array[i][j]){

@@ -5,7 +5,6 @@ extern int clock_gettime(clockid_t unused, struct timespec *tp);
 
 ParticleFilter::ParticleFilter(void (*callback)(const char*))
 {
-    this->initParticleFilter();
     this->printDebug = callback;
 
     updating = false;
@@ -22,11 +21,12 @@ ParticleFilter::ParticleFilter(void (*callback)(const char*))
     poseArray.poses.size = NUM_OF_PARTICLES;
     poseArray.poses.capacity = NUM_OF_PARTICLES;
     poseArray.poses.data = (geometry_msgs__msg__Pose*)malloc(NUM_OF_PARTICLES * sizeof(geometry_msgs__msg__Pose));
-    // poseArray.poses.data = poseArrayData;
 
     // Initialise last odoms
     lastUsedOdomInitialised = false;
     lastOdomInitialised = false;
+    particleFilterInitialised = false;
+
 }
 
 ParticleFilter::ParticleFilter(){
@@ -52,16 +52,43 @@ ParticleFilter::ParticleFilter(){
 
 void ParticleFilter::initParticleFilter(){
 
+    const double X_WIDTH = 3;
+    const double Y_WIDTH = 3;
+    const double YAW_WIDTH = PI;
+
+    this->printDebug("initalising particles in function");  
+
     // Iterate through particles and initialise particles
     for (int i = 0; i < NUM_OF_PARTICLES; i++) {
-        Particle particle = Particle();                 // Create new particle
-        particle.initParticle(3,3,NUM_OF_PARTICLES);    // Init the particles
-        particles.push_back(particle);                  // Append particle to the vector (dynamic list)
+
+        Particle particle = Particle();                                                     // Create new particle
+
+        double x = (double)rand()/(double)RAND_MAX * X_WIDTH - X_WIDTH/2;
+        double y = (double)rand()/(double)RAND_MAX * Y_WIDTH - Y_WIDTH/2;
+        double yaw = (double)rand()/(double)RAND_MAX * YAW_WIDTH - YAW_WIDTH/2;
+        
+        particle.initParticle(x, y, yaw, 1.0/NUM_OF_PARTICLES);                             // Init the particles
+        particles.push_back(particle);                                                      // Append particle to the vector (dynamic list)
+
+        // Print x and y coordinates of particle i 
+        char buffer[100];
+        sprintf(buffer, "NEW Particle %d: x = %f, y = %f, weight = %f", i, particles.at(i).pose.position.x, particles.at(i).pose.position.y, particles.at(i).weight);
+        this->printDebug(buffer);
+
     }
+
+    // Set particle filter as initialised
+    particleFilterInitialised = true;
 
 }
 
 void ParticleFilter::updateParticles(){
+
+    // Check if new particle data came in 
+    if (Quat::arePosesEqual(latestOdom, previousOdom)) {
+        this->printDebug("No new data");
+        return;
+    }
 
     updating = true;
 
@@ -116,7 +143,7 @@ void ParticleFilter::updateParticles(){
 
     // Resmaple the particles if needed
     if(shouldResample()){
-        resampleParticles();
+        // resampleParticles();
     }
 
     // Update the particles 
@@ -132,16 +159,28 @@ void ParticleFilter::updateLatestOdom(nav_msgs__msg__Odometry odom){
         lastUsedOdomInitialised = true;
     }
 
-
     // Update the latest odom
     if (!updating){
-        latestOdom = odom.pose.pose;
+        // Update latestOdom field by field
+        latestOdom.position.x = odom.pose.pose.position.x;
+        latestOdom.position.y = odom.pose.pose.position.y;
+        latestOdom.position.z = odom.pose.pose.position.z;
+        latestOdom.orientation.x = odom.pose.pose.orientation.x;
+        latestOdom.orientation.y = odom.pose.pose.orientation.y;
+        latestOdom.orientation.z = odom.pose.pose.orientation.z;
+        latestOdom.orientation.w = odom.pose.pose.orientation.w;
     }
 }
 
-void ParticleFilter::updatePreviousOdom(nav_msgs__msg__Odometry odom){
-    // Update the previous odom
-    previousOdom = odom.pose.pose;
+void ParticleFilter::updatePreviousOdom(){
+    // Copy each field of odom to previous odom
+    previousOdom.position.x = this->latestOdom.position.x;
+    previousOdom.position.y = this->latestOdom.position.y;
+    previousOdom.position.z = this->latestOdom.position.z;
+    previousOdom.orientation.x = this->latestOdom.orientation.x;
+    previousOdom.orientation.y = this->latestOdom.orientation.y;
+    previousOdom.orientation.z = this->latestOdom.orientation.z;
+    previousOdom.orientation.w = this->latestOdom.orientation.w;
 }
 
 void ParticleFilter::updateLatestLaserScan(sensor_msgs__msg__LaserScan laserScan){
@@ -163,22 +202,13 @@ geometry_msgs__msg__Pose ParticleFilter::etimatePose(){
     for(Particle particle : particles){
         estimatedPose.x += particle.pose.position.x * particle.weight;
         estimatedPose.y += particle.pose.position.y * particle.weight;
-        Quaternion q = {particle.pose.orientation.w, particle.pose.orientation.x, particle.pose.orientation.y, particle.pose.orientation.z};
-        double particleTheta = Quat::ToEulerAngles(q).yaw;
-        estimatedPose.theta += particleTheta* particle.weight;
+        double particleTheta = Quat::yawFromPose(particle.pose);
+        estimatedPose.theta += particleTheta * particle.weight;
     }
 
     // Convert the estimated pose to a geometry_msgs::Pose
     geometry_msgs__msg__Pose estimatedPoseMsg = geometry_msgs__msg__Pose();
-    estimatedPoseMsg.position.x = estimatedPose.x;
-    estimatedPoseMsg.position.y = estimatedPose.y;
-    estimatedPoseMsg.position.z = 0;    
-    EulerAngles angles = {0, 0, estimatedPose.theta};
-    Quaternion q = Quat::EulerToQuaternion(angles);
-    estimatedPoseMsg.orientation.w = q.w;
-    estimatedPoseMsg.orientation.x = q.x;
-    estimatedPoseMsg.orientation.y = q.y;
-    estimatedPoseMsg.orientation.z = q.z;
+    estimatedPoseMsg = Quat::poseFromXYZRPY(estimatedPose.x, estimatedPose.y, 0, 0, 0, estimatedPose.theta);
 
     return estimatedPoseMsg;
 
@@ -251,53 +281,10 @@ geometry_msgs__msg__PoseArray ParticleFilter::getPoseArray(){
     // https://answers.ros.org/question/381123/how-to-generate-header-stamp-rpi-pico/
     // https://github.com/micro-ROS/freertos_apps/issues/62
 
-    // Create a new pose array
-    // geometry_msgs__msg__PoseArray poseArray = geometry_msgs__msg__PoseArray();
-    // bool success = rosidl_runtime_c__String__assign(&poseArray.header.frame_id,"map");
-    // poseArray.poses.size = NUM_OF_PARTICLES;
-    // poseArray.poses.capacity = NUM_OF_PARTICLES;
-    // poseArray.poses.data = (geometry_msgs__msg__Pose*)malloc(NUM_OF_PARTICLES * sizeof(geometry_msgs__msg__Pose));
-
-    // send debug message
-    char msg[100];
-    sprintf(msg, "Pose array size: %d", NUM_OF_PARTICLES);
-    this->printDebug(msg);
-
     // Iterate through the particles and add them to the pose array
     for(int i = 0; i < NUM_OF_PARTICLES; i++){
-
-        // char str[100];
-        // sprintf(str, " Adding particle [%d]to pose array", i);
-
-        // publish debug message
-        // this->printDebug(str);
-
-        // Create string which contains pose of the particle
-        // char poseStr[100];
-        // sprintf(poseStr, "Particle [%d] pose: x: %f, y: %f, theta: %f", i, particles.at(i).pose.position.x, particles.at(i).pose.position.y, particles.at(i).pose.orientation.z);
-        // this->printDebug(poseStr);
-
-        // Print pose of the particle in pose array
-
-        // char poseArrayStr[100];
-        // sprintf(poseArrayStr, "Pose array pose: x: %f, y: %f, theta: %f", poseArray.poses.data[i].position.x, poseArray.poses.data[i].position.y, poseArray.poses.data[i].orientation.z);
-        // this->printDebug(poseArrayStr);
-
         poseArray.poses.data[i] = particles.at(i).pose;
-
-        // publish debug message
-        // this->printDebug(" Added particle to pose array");
-
     }
-
-    // Debug message
-    this->printDebug("Iterated through pose array!");
-
-    // Fill the message timestamp
-    // struct timespec ts;
-    // clock_gettime(CLOCK_REALTIME, &ts);
-    // poseArray.header.stamp.sec = ts.tv_sec;
-    // poseArray.header.stamp.nanosec = ts.tv_nsec;
 
     // Fill the message timestamp
     // https://github.com/micro-ROS/micro_ros_arduino/issues/1122
@@ -310,7 +297,14 @@ geometry_msgs__msg__PoseArray ParticleFilter::getPoseArray(){
 
 bool ParticleFilter::isInitialised(){
 
-    // Check if the particle filter is initialised
-    return (lastUsedOdomInitialised && lastOdomInitialised);
+    // Check if the particle filter is initialised and odom message has been recieved
+    return (lastUsedOdomInitialised && lastOdomInitialised && particleFilterInitialised);
 
 }
+ bool ParticleFilter::isParticlesInitialised(){
+
+    // Check if the particles have been initalised
+    return particleFilterInitialised;
+
+ }
+

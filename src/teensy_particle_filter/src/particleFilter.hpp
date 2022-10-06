@@ -19,7 +19,6 @@
 #include <rclc/executor.h>
 
 #include <std_msgs/msg/header.h>
-
 #include <nav_msgs/msg/odometry.h>
 
 #include <stdio.h>
@@ -27,6 +26,10 @@
 #include <time.h>
 
 #include <exception>
+
+// Random number generator
+#include <Entropy.h>
+#include <random>
 
 class ParticleFilter
 {
@@ -42,10 +45,10 @@ private:
     geometry_msgs__msg__Pose previousOdom;
     sensor_msgs__msg__LaserScan latestLaserScan;
     geometry_msgs__msg__PoseArray poseArray;
-    // geometry_msgs__msg__Pose poseArrayData[NUM_OF_PARTICLES];
 
     bool lastUsedOdomInitialised;
     bool lastOdomInitialised;
+    bool particleFilterInitialised;
 
     void (*printDebug)(const char*);
 
@@ -59,7 +62,7 @@ public:
     void updateParticles();
 
     void updateLatestOdom(nav_msgs__msg__Odometry odom);
-    void updatePreviousOdom(nav_msgs__msg__Odometry odom);
+    void updatePreviousOdom();
     void updateLatestLaserScan(sensor_msgs__msg__LaserScan laserScan);
 
     geometry_msgs__msg__Pose etimatePose();
@@ -70,6 +73,8 @@ public:
 
     // Check if odom is initalised 
     bool isInitialised();
+
+    bool isParticlesInitialised();
 
 };
 
