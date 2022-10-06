@@ -48,9 +48,9 @@ geometry_msgs__msg__Pose MotionModel::sampleMotionModel(
         double curr_y = previous_xt.position.y;
         double curr_yaw = Quat::yawFromPose(previous_xt);
 
-        double x = curr_x + (t_dt * cos(curr_yaw + t_d1));
-        double y = curr_y + (t_dt * sin(curr_yaw + t_d1));
-        double yaw = curr_yaw + t_d1 + t_d2;
+        double x = curr_x - (t_dt * cos(curr_yaw + t_d1));
+        double y = curr_y - (t_dt * sin(curr_yaw + t_d1));
+        double yaw = curr_yaw - (t_d1 + t_d2);
 
         // Get new pose
         geometry_msgs__msg__Pose newPose = Quat::poseFromXYZRPY(x,y,0,0,0,yaw);
