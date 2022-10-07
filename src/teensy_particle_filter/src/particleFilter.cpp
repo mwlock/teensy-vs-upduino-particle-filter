@@ -27,6 +27,17 @@ ParticleFilter::ParticleFilter(void (*callback)(const char*))
     lastOdomInitialised = false;
     particleFilterInitialised = false;
 
+    // Allocate memory for latestLaserScan
+    static micro_ros_utilities_memory_conf_t conf = {0};
+    conf.max_string_capacity = 50;
+    conf.max_ros2_type_sequence_capacity = 21;
+    conf.max_basic_type_sequence_capacity = 21;
+    success = micro_ros_utilities_create_message_memory(
+        ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, LaserScan),
+        &latestLaserScan,
+        conf
+    );
+
 }
 
 ParticleFilter::ParticleFilter(){
@@ -48,12 +59,13 @@ ParticleFilter::ParticleFilter(){
     // Initialise last odoms
     lastUsedOdomInitialised = false;
     lastOdomInitialised = false;
+
 }
 
 void ParticleFilter::initParticleFilter(){
 
-    const double X_WIDTH = 3;
-    const double Y_WIDTH = 3;
+    const double X_WIDTH = 1.5;
+    const double Y_WIDTH = 1.5;
     const double YAW_WIDTH = PI;
 
     this->printDebug("initalising particles in function");  
@@ -186,7 +198,25 @@ void ParticleFilter::updatePreviousOdom(){
 void ParticleFilter::updateLatestLaserScan(sensor_msgs__msg__LaserScan laserScan){
     // Update the latest laser scan
     if (!updating){
-        latestLaserScan = laserScan;
+
+        // // Copy laser scan to latest laser scan field by field
+        latestLaserScan.angle_min = laserScan.angle_min;
+        latestLaserScan.angle_max = laserScan.angle_max;
+        latestLaserScan.angle_increment = laserScan.angle_increment;
+        latestLaserScan.time_increment = laserScan.time_increment;
+        latestLaserScan.scan_time = laserScan.scan_time;
+        latestLaserScan.range_min = laserScan.range_min;
+        latestLaserScan.range_max = laserScan.range_max;
+        latestLaserScan.ranges.size = laserScan.ranges.size;
+        for (size_t i = 0; i < laserScan.ranges.size; i++)
+        {
+            latestLaserScan.ranges.data[i] = laserScan.ranges.data[i];
+        }
+
+        // Print laserScan data
+        char buffer[500];
+        sprintf(buffer, "First range copied: %f", laserScan.ranges.data[10]);
+        this->printDebug(buffer);
     }
 }
 
@@ -308,3 +338,7 @@ bool ParticleFilter::isInitialised(){
 
  }
 
+bool ParticleFilter::isUpdating(){
+    // Check if the particle filter is updating
+    return updating;
+}

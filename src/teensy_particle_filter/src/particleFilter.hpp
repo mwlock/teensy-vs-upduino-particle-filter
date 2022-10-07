@@ -31,6 +31,9 @@
 #include <Entropy.h>
 #include <random>
 
+// Microros
+#include <micro_ros_utilities/type_utilities.h>
+
 class ParticleFilter
 {
 private:
@@ -70,10 +73,10 @@ public:
 
     bool shouldResample();
     void resampleParticles();
+    bool isUpdating();
 
     // Check if odom is initalised 
     bool isInitialised();
-
     bool isParticlesInitialised();
 
 };

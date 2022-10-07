@@ -140,6 +140,11 @@ void timer_callback(rcl_timer_t * timer, int64_t last_call_time) {
 // Odometry message cb
 void odom_subscription_callback(const void *msgin) {
 
+    // Check if particle filter is updating
+  if (particleFilter.isUpdating()){
+    return;
+  }
+
   const nav_msgs__msg__Odometry * msg = (const nav_msgs__msg__Odometry *)msgin;
 
   // Copy msg to lastOdom field by field
@@ -172,12 +177,14 @@ void odom_subscription_callback(const void *msgin) {
 // Odometry message cb
 void scan_subscription_callback(const void *msgin) {
 
+  // Check if particle filter is updating
+  if (particleFilter.isUpdating()){
+    return;
+  }
+
   // Get the message
   const sensor_msgs__msg__LaserScan * msg = (const sensor_msgs__msg__LaserScan *)msgin;
   particleFilter.updateLatestLaserScan(*msg);
-
-  // Turn on LED
-  digitalWrite(LED_BUILTIN, HIGH);
 
 }
 
@@ -275,7 +282,7 @@ void setup() {
   // debug_publisher.initPublisher(&node);
 
   // create timer,
-  const unsigned int timer_timeout = 1000;
+  const unsigned int timer_timeout = 200; // in ms
   RCCHECK(rclc_timer_init_default(
     &timer,
     &support,
