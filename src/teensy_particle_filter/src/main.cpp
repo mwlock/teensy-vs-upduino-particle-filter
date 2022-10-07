@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <micro_ros_platformio.h>
+#include <micro_ros_utilities/type_utilities.h>
 
 #include <rcl/rcl.h>
 #include <rclc/rclc.h>
@@ -184,6 +185,17 @@ void setup() {
 
   // Initialise Entropy
   Entropy.Initialize();
+
+  // Allocate memory for LaserScan
+  static micro_ros_utilities_memory_conf_t conf = {0};
+  conf.max_string_capacity = 50;
+  conf.max_ros2_type_sequence_capacity = 21;
+  conf.max_basic_type_sequence_capacity = 21;
+  bool success = micro_ros_utilities_create_message_memory(
+    ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, LaserScan),
+    &laserScanMsg,
+    conf
+  );
 
   // Configure serial transport
   Serial.begin(115200);
