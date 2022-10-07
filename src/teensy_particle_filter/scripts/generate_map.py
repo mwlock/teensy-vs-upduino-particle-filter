@@ -71,7 +71,7 @@ class Map():
                 array_string +=temp_string
             array_string = array_string[:-2] + '};'
 
-            array_string = "bool map[{}][{}] = {}".format(self.grid.shape[0],self.grid.shape[1],array_string)
+            array_string = "const bool map_array[{}][{}] = {}".format(self.grid.shape[0],self.grid.shape[1],array_string)
             map_string = '#ifndef MAP_H\n#define MAP_H\n{}\n#endif\n'.format(array_string)    
 
             text_file = open('../include/map_array.h', "w")
