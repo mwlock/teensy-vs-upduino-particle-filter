@@ -54,8 +54,16 @@ go to [bugzilla](https://gcc.gnu.org/bugzilla/attachment.cgi?id=36237&action=edi
 ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyACM0
 ```
 
+# Echo Config String
+
+```bash
+ros2 topic echo /particle_filter/config_string --truncate-length 1000 --field data
+```
+
 ## Useful guides
 
 - [Teensy with Arduino](https://micro.ros.org/docs/tutorials/core/teensy_with_arduino/)
 - [micro_ros_platformio](https://github.com/micro-ROS/micro_ros_platformio)
 - [micro_ros_arduino](https://github.com/micro-ROS/micro_ros_arduino)
+- [How to include a custom ROS message in micro-ROS
+](https://micro.ros.org/docs/tutorials/advanced/create_new_type/)

@@ -1,7 +1,7 @@
 #include "particleFilter.hpp"
 #include "particle.hpp"
 
-extern int clock_gettime(clockid_t unused, struct timespec *tp);
+extern "C" int clock_gettime(clockid_t unused, struct timespec *tp);
 
 ParticleFilter::ParticleFilter(void (*callback)(const char*))
 {
@@ -47,6 +47,7 @@ ParticleFilter::ParticleFilter(){
     // Get a vector of all the map points containing an obstacle
     this->map_obstacles = this->getMapObstacles();
     updating = false;
+    this->laserScanUpdating = false;
     motionModel = MotionModel();
     sensorModel = SensorModel(this->map_obstacles);
 
@@ -115,12 +116,19 @@ void ParticleFilter::initParticleFilter(){
 
 }
 
-std::tuple<geometry_msgs__msg__PoseArray,geometry_msgs__msg__Pose> ParticleFilter::updateParticles(){
+bool ParticleFilter::odomWasUpdated(){
+    if (Quat::arePosesEqual(this->latestOdom, this->previousOdom) || this->laserScanUpdating){
+        return false;
+    }
+    return true;
+}
+
+std::tuple<geometry_msgs__msg__PoseArray,geometry_msgs__msg__Pose,bool> ParticleFilter::updateParticles(){
 
     // Check if new particle data came in 
-    if (Quat::arePosesEqual(latestOdom, previousOdom)) {
+    if (!this->odomWasUpdated()){
         this->printDebug("No new data");
-        return std::make_tuple(this->prev_pose_array, this->prev_estimated_pose);
+        return std::make_tuple(this->prev_pose_array, this->prev_estimated_pose,false);
     }
 
     updating = true;
@@ -191,7 +199,7 @@ std::tuple<geometry_msgs__msg__PoseArray,geometry_msgs__msg__Pose> ParticleFilte
     geometry_msgs__msg__Pose est_pose = this->etimatePose();
 
 
-    std::tuple<geometry_msgs__msg__PoseArray,geometry_msgs__msg__Pose> result = std::make_tuple(pa, est_pose);
+    std::tuple<geometry_msgs__msg__PoseArray,geometry_msgs__msg__Pose,bool> result = std::make_tuple(pa, est_pose,true);
 
     // Update previous estimated pose and pose array
     this->prev_estimated_pose = est_pose;
@@ -239,7 +247,7 @@ void ParticleFilter::updatePreviousOdom(){
 void ParticleFilter::updateLatestLaserScan(sensor_msgs__msg__LaserScan laserScan){
     // Update the latest laser scan
     if (!updating){
-
+        this->laserScanUpdating = true;
         // // Copy laser scan to latest laser scan field by field
         latestLaserScan.angle_min = laserScan.angle_min;
         latestLaserScan.angle_max = laserScan.angle_max;
@@ -254,6 +262,7 @@ void ParticleFilter::updateLatestLaserScan(sensor_msgs__msg__LaserScan laserScan
             latestLaserScan.ranges.data[i] = laserScan.ranges.data[i];
         }
     }
+    this->laserScanUpdating = false;
 }
 
 geometry_msgs__msg__Pose ParticleFilter::etimatePose(){

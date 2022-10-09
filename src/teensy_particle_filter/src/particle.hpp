@@ -46,7 +46,7 @@ public:
     double y,
     double theta,
     double weight
-);
+    );
 };
 
 #endif

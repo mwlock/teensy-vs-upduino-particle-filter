@@ -61,6 +61,7 @@ private:
     bool lastUsedOdomInitialised;
     bool lastOdomInitialised;
     bool particleFilterInitialised;
+    bool laserScanUpdating;
 
     void (*printDebug)(const char*);
 
@@ -72,7 +73,7 @@ public:
     ParticleFilter();
     void initParticleFilter();
     std::vector<std::tuple<double, double>> getMapObstacles();
-    std::tuple<geometry_msgs__msg__PoseArray,geometry_msgs__msg__Pose> updateParticles();
+    std::tuple<geometry_msgs__msg__PoseArray, geometry_msgs__msg__Pose, bool> updateParticles();
 
     void updateLatestOdom(nav_msgs__msg__Odometry odom);
     void updatePreviousOdom();
@@ -88,7 +89,7 @@ public:
     // Check if odom is initalised 
     bool isInitialised();
     bool isParticlesInitialised();
-
+    bool odomWasUpdated();
 };
 
 #endif

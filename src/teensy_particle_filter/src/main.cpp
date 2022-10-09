@@ -6,11 +6,15 @@
 #include <rclc/rclc.h>
 #include <rclc/executor.h>
 
+#include <string>
+
 #include <std_msgs/msg/int32.h>
 #include <nav_msgs/msg/odometry.h>
 #include <sensor_msgs/msg/laser_scan.h>
 #include <geometry_msgs/msg/pose_array.h>
 #include <geometry_msgs/msg/pose.h>
+#include <std_msgs/msg/string.h>
+#include <std_msgs/msg/float64.h>
 #include <std_msgs/msg/string.h>
 
 #include "particle.hpp"
@@ -23,9 +27,14 @@
 // Random numbers
 #include "FastRNG.hpp"
 
+// Utils
+#include "memoryUtil.hpp"
+
 // Particle filter parameters
-#define RESAMPLING_FREQUENCY 3 // Hz
+#define RESAMPLING_FREQUENCY 30 // Hz
 #define RESAMPLING_TIME_MILLISECONDS int((1.0/RESAMPLING_FREQUENCY)*1000)  // ms
+
+extern "C" int clock_gettime(clockid_t unused, struct timespec *tp);
 
 #if !defined(MICRO_ROS_TRANSPORT_ARDUINO_SERIAL)
 #error This example is only avaliable for Arduino framework with serial transport.
@@ -36,6 +45,8 @@ rcl_publisher_t publisher;
 rcl_publisher_t publisherPoseArray;
 rcl_publisher_t publisherEstimatedPose;
 rcl_publisher_t publisherDebug;
+rcl_publisher_t publisherTime;
+rcl_publisher_t publisherConfigString;
 
 rcl_subscription_t subscriber_odom;
 rcl_subscription_t subscriber_scan;
@@ -47,6 +58,8 @@ sensor_msgs__msg__LaserScan laserScanMsg;
 geometry_msgs__msg__PoseArray poseArray;
 geometry_msgs__msg__Pose estimatedPoseMsg;
 std_msgs__msg__String stringMsg;
+std_msgs__msg__Float64 time_msg;
+std_msgs__msg__String configStringMsg;
 
 // Executors
 rclc_executor_t executor;
@@ -55,6 +68,8 @@ rclc_executor_t executor_odom_sub;
 rclc_executor_t executor_estimated_pose_pub;
 rclc_executor_t executor_particle_cloud_pub;
 rclc_executor_t executor_string_pub;
+rclc_executor_t executor_time_pub;
+rclc_executor_t executor_config_string_pub;
 
 rclc_support_t support;
 rcl_allocator_t allocator;
@@ -96,6 +111,19 @@ void publishDebugMessage(const char* message) {
 // =                                                                                                                                                =
 // ==================================================================================================================================================
 
+double getStartTime(){
+  struct timespec ts;
+  clock_gettime(0, &ts);
+  return ts.tv_sec + ts.tv_nsec / 1e9;
+}
+
+double getTimeInterval(double start_time){
+  struct timespec ts;
+  clock_gettime(0, &ts);
+  double end_time = ts.tv_sec + ts.tv_nsec / 1e9;
+  return (end_time - start_time) * 1000.0;
+}
+
 void timer_callback(rcl_timer_t * timer, int64_t last_call_time) {
   RCLC_UNUSED(last_call_time);
 
@@ -118,28 +146,26 @@ void timer_callback(rcl_timer_t * timer, int64_t last_call_time) {
     // Update particle set
     geometry_msgs__msg__Pose estimatedPose;
     geometry_msgs__msg__PoseArray particleCloud;
-    std::tie(particleCloud,estimatedPose) = particleFilter.updateParticles();
+    bool particleUpdated;
+    double start_time = getStartTime();
+    std::tie(particleCloud,estimatedPose,particleUpdated) = particleFilter.updateParticles();
+    double time_interval = getTimeInterval(start_time);
+    // PRINT TIME TAKEN
+    char buffer[100];
+    sprintf(buffer, "Time taken to update particles: %f ms", time_interval);
+    publishDebugMessage(buffer);
 
-    // Print "Hey, update!" to debug
-    publishDebugMessage("Hey, update!"); 
-
-    // Calculate pose array and publish PoseArray
-    // geometry_msgs__msg__PoseArray particleCloud = particleFilter.getPoseArray();  
-    // // Calculate estimated pose
-    // geometry_msgs__msg__Pose estimatedPose = particleFilter.etimatePose();
-    
+    // If the particle were updated, publish the new update time
+    if (particleUpdated){
+      time_msg.data = time_interval;
+      RCSOFTCHECK(rcl_publish(&publisherTime, &time_msg, NULL));
+    }
 
     // Update the latest odom used
     particleFilter.updatePreviousOdom();
 
-    // Print "Hey, publish!" to debug
-    publishDebugMessage("Hey, updated odom!");
-
     RCSOFTCHECK(rcl_publish(&publisherPoseArray, &particleCloud, NULL));
     RCSOFTCHECK(rcl_publish(&publisherEstimatedPose, &estimatedPose, NULL));
-
-    // Print "Hey, published!" to debug
-    publishDebugMessage("Hey, published!");
 
   }
 }
@@ -290,6 +316,20 @@ void setup() {
     ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, String),
     "debug"));
 
+  // ConfigString publisher
+  RCCHECK(rclc_publisher_init_default(
+    &publisherConfigString,
+    &node,
+    ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, String),
+    "particle_filter/config_string"));
+
+  // Time publisher
+  RCCHECK(rclc_publisher_init_default(
+    &publisherTime,
+    &node,
+    ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Float64),
+    "particle_filter/update_time"));
+
   // create timer,
   const unsigned int timer_timeout = RESAMPLING_TIME_MILLISECONDS; // in ms
   RCCHECK(rclc_timer_init_default(
@@ -308,9 +348,11 @@ void setup() {
   RCCHECK(rclc_executor_init(&executor, &support.context, 1, &allocator));
   RCCHECK(rclc_executor_add_timer(&executor, &timer));
 
-  RCCHECK(rclc_executor_init(&executor_particle_cloud_pub, &support.context, 1, &allocator)); // particle cloud publisher
-  RCCHECK(rclc_executor_init(&executor_string_pub, &support.context, 1, &allocator)); // string publisher
-  RCCHECK(rclc_executor_init(&executor_estimated_pose_pub, &support.context, 1, &allocator)); // estimated pose publisher
+  RCCHECK(rclc_executor_init(&executor_particle_cloud_pub, &support.context, 1, &allocator));         // particle cloud publisher
+  RCCHECK(rclc_executor_init(&executor_string_pub, &support.context, 1, &allocator));                 // string publisher
+  RCCHECK(rclc_executor_init(&executor_estimated_pose_pub, &support.context, 1, &allocator));         // estimated pose publisher
+  RCCHECK(rclc_executor_init(&executor_time_pub, &support.context, 1, &allocator));                   // estimated pose publisher
+  RCCHECK(rclc_executor_init(&executor_config_string_pub, &support.context, 1, &allocator));          // config string publisher
 
   // ==================================================================================================================================================
   // =                                                                                                                                                =
@@ -350,14 +392,54 @@ void loop() {
   RCSOFTCHECK(rclc_executor_spin_some(&executor_particle_cloud_pub, RCL_MS_TO_NS(100)));
   RCSOFTCHECK(rclc_executor_spin_some(&executor_string_pub, RCL_MS_TO_NS(100)));
   RCSOFTCHECK(rclc_executor_spin_some(&executor_estimated_pose_pub, RCL_MS_TO_NS(100)));
-
-
+  RCSOFTCHECK(rclc_executor_spin_some(&executor_time_pub, RCL_MS_TO_NS(100)));
+  RCSOFTCHECK(rclc_executor_spin_some(&executor_config_string_pub, RCL_MS_TO_NS(100)));
 
   if (!particleFilter.isParticlesInitialised()){
 
     delay(100);      
     particleFilter.initParticleFilter();
     publishDebugMessage("Particles initialised");
+
+    // CHECK MEMORY USAGE
+    int stack;
+    int heap;
+    int psram;
+    std::tie(stack, heap, psram) = MemoryUtil::memInfo();
+    char buffer[100];
+    sprintf(buffer, "Memory: stack (kb): %d, heap (kb): %d, psram (kb): %d", stack, heap, psram);
+    publishDebugMessage(buffer);
+    // MemoryUtil::getFreeITCM();
+
+    // Publish config string
+    std_msgs__msg__String configStringMsg;
+
+    // Compose config string with number of particles using sprintf
+    char configString[1000];
+    int char_used = sprintf(configString, "==============Config string==============:\n" \
+                                          "num_particles: %d\n" \
+                                          "memory used (kb): %d\n"\
+                                          "=========================================\n" \
+                                          "Sensor model: \n" \
+                                          "LIKELIHOOD_STD_DEV = %f\n" \
+                                          "=========================================\n" \
+                                          "Motion model: \n" \
+                                          "ALPHA1 = %f\n" \
+                                          "ALPHA2 = %f\n" \
+                                          "ALPHA3 = %f\n" \
+                                          "ALPHA4 = %f\n" \
+                                          "MULTIPLIER = %f\n" \
+                                          "=========================================\n" \
+                                          "Resampling: \n" \
+                                          "RESAMPLING_FREQUENCY = %d\n" \
+                                          "RESAMPLING_TIME_MILLISECONDS = %d\n" \
+                                          "=========================================\n" \
+
+    , (int)NUM_OF_PARTICLES, stack+heap+psram,LIKELIHOOD_STD_DEV, ALPHA1, ALPHA2, ALPHA3, ALPHA4, NOISE_MULTIPLIER, RESAMPLING_FREQUENCY, RESAMPLING_TIME_MILLISECONDS);
+    configStringMsg.data.data = configString;
+    configStringMsg.data.size = char_used;
+    rcl_publish(&publisherConfigString, &configStringMsg, NULL);
+
 
     // ==================================================================================================================================================
     // =                                                                                                                                                =
