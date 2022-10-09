@@ -7,9 +7,12 @@ ParticleFilter::ParticleFilter(void (*callback)(const char*))
 {
     this->printDebug = callback;
 
+    // Get a vector of all the map points containing an obstacle
+    this->map_obstacles = this->getMapObstacles();
+
     updating = false;
     motionModel = MotionModel();
-    sensorModel = SensorModel();
+    sensorModel = SensorModel(this->map_obstacles);
 
     latestOdom = geometry_msgs__msg__Pose();
     previousOdom = geometry_msgs__msg__Pose();
@@ -41,9 +44,11 @@ ParticleFilter::ParticleFilter(void (*callback)(const char*))
 }
 
 ParticleFilter::ParticleFilter(){
+    // Get a vector of all the map points containing an obstacle
+    this->map_obstacles = this->getMapObstacles();
     updating = false;
     motionModel = MotionModel();
-    sensorModel = SensorModel();
+    sensorModel = SensorModel(this->map_obstacles);
 
     latestOdom = geometry_msgs__msg__Pose();
     previousOdom = geometry_msgs__msg__Pose();
@@ -62,11 +67,27 @@ ParticleFilter::ParticleFilter(){
 
 }
 
+std::vector<std::tuple<double, double>> ParticleFilter::getMapObstacles(){
+    int MAP_HEIGHT =  sizeof(map_array) / sizeof(map_array[0]);
+    int MAP_WIDTH = sizeof(map_array[0]) / sizeof(bool);
+    std::vector<std::tuple<double, double>> map_obstacles;
+    for (int i = 0; i < MAP_HEIGHT; i++){
+        for (int j = 0; j < MAP_WIDTH; j++){
+            if (map_array[i][j] == 1){
+                double y_pos = (MAP_HEIGHT - i) * MAP_RESOLUTION;
+                double x_pos = j * MAP_RESOLUTION;
+                map_obstacles.push_back(std::make_tuple(x_pos, y_pos));
+            }
+        }
+    }
+    return map_obstacles;
+}
+
 void ParticleFilter::initParticleFilter(){
 
-    const double X_WIDTH = 1.5;
-    const double Y_WIDTH = 1.5;
-    const double YAW_WIDTH = PI;
+    // const double X_WIDTH = 1.5;
+    // const double Y_WIDTH = 1.5;
+    // const double YAW_WIDTH = PI;
 
     this->printDebug("initalising particles in function");  
 
@@ -86,12 +107,7 @@ void ParticleFilter::initParticleFilter(){
         
         particle.initParticle(x, y, yaw, 1.0/NUM_OF_PARTICLES);                             // Init the particles
         particles.push_back(particle);                                                      // Append particle to the vector (dynamic list)
-
-        // Print x and y coordinates of particle i 
-        char buffer[100];
-        sprintf(buffer, "NEW Particle %d: x = %f, y = %f, weight = %f", i, particles.at(i).pose.position.x, particles.at(i).pose.position.y, particles.at(i).weight);
-        this->printDebug(buffer);
-
+        
     }
 
     // Set particle filter as initialised
@@ -114,7 +130,6 @@ std::tuple<geometry_msgs__msg__PoseArray,geometry_msgs__msg__Pose> ParticleFilte
 
     // Iterate through current particles
     for(Particle particle : particles){
-        
         geometry_msgs__msg__Pose currentPose = particle.pose;
         geometry_msgs__msg__Pose predictedPose = motionModel.sampleMotionModel(
             currentPose,

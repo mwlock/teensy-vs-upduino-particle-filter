@@ -1,7 +1,10 @@
 #include "sensorModel.hpp"
 
-SensorModel::SensorModel()
+SensorModel::SensorModel() {}
+
+SensorModel::SensorModel(std::vector<std::tuple<double, double>> map_obstacles)
 {
+    this->map_obstacles = map_obstacles;
 }
 
 double SensorModel::sampleSensorModel(
@@ -33,27 +36,24 @@ double SensorModel::sampleSensorModel(
         // Check if the range is valid
         if(!(range < laserScan.range_min || range > laserScan.range_max)){   
 
-            // delay(10);
 
             // Project the range onto the map
             double x = mapPose.x + range * cos(mapPose.theta + angle);
             double y = mapPose.y + range * sin(mapPose.theta + angle);
 
             // Calculate dimensions of the map
-            int MAP_HEIGHT =  sizeof(map_array) / sizeof(map_array[0]);
-            int MAP_WIDTH = sizeof(map_array[0]) / sizeof(bool);
-
+            // int MAP_HEIGHT =  sizeof(map_array) / sizeof(map_array[0]);
+            // int MAP_WIDTH = sizeof(map_array[0]) / sizeof(bool);
             // Check if the laser scan is within the map and bound x and y
             // Turns out this is making the measurement to the wall **always** valid if the projected point is outside the map
             // if (x > MAP_WIDTH * MAP_RESOLUTION) x = (MAP_WIDTH-1) * MAP_RESOLUTION;        
             // if (y > MAP_HEIGHT * MAP_RESOLUTION) y = (MAP_HEIGHT-1) * MAP_RESOLUTION;
 
-
             // Find the closest obstacle to the particle
-            double obstacleDistance = closestObstacle(x, y);
+            double obstacleDistance = this->closestObstacle(x, y, printDebug);
 
             // Calculate the probability of the particle
-            double probailityOfHit = calculateProbability(obstacleDistance);
+            double probailityOfHit = calculateProbability(obstacleDistance,printDebug);
             
             // Multiply the particle probability by the probability of the laser scan
             particleProbability *= probailityOfHit;
@@ -83,31 +83,30 @@ SimplePose SensorModel::calculateMapPose(geometry_msgs__msg__Pose particlePose){
     return mapPose;
 }
 
-double SensorModel::closestObstacle(double x, double y){
+double SensorModel::closestObstacle(double x, double y, void (*printDebug)(const char*)){
 
-    // Calculate dimensions of the map
-    int MAP_HEIGHT =  sizeof(map_array) / sizeof(map_array[0]); 
-    int MAP_WIDTH = sizeof(map_array[0]) / sizeof(bool); 
-
-    // Find the closest obstacle to the particle
+    // Find the closest obstacle to the particle in map_particle vector of tuple
     double closestObstacle = std::numeric_limits<double>::max();
-    for(int i = 0; i < MAP_HEIGHT; i++){
-        for(int j = 0; j < MAP_WIDTH; j++){
-            if(map_array[i][j]){
-                double distance = sqrt(pow(x - j * MAP_RESOLUTION, 2) + pow(y - i * MAP_RESOLUTION, 2));
-                if(distance < closestObstacle){
-                    closestObstacle = distance;
-                }
-            }
+    double closestObstacleIndex_x = 0;
+    double closestObstacleIndex_y = 0;
+    for (auto obstacle : this->map_obstacles){
+        double obstacleX = std::get<0>(obstacle);
+        double obstacleY = std::get<1>(obstacle);
+        double distance = sqrt(pow(x - obstacleX, 2) + pow(y - obstacleY, 2));
+        if (distance < closestObstacle){
+            closestObstacle = distance;
+            closestObstacleIndex_x = obstacleX;
+            closestObstacleIndex_y = obstacleY;
         }
     }
 
     return closestObstacle;
 }
 
-double SensorModel::calculateProbability(double range){
+double SensorModel::calculateProbability(double range,void (*printDebug)(const char*)){
 
     // Evaluate guassian with std of "LIKELIHOOD_STD_DEV" at "range"
     double probability = 1 / (LIKELIHOOD_STD_DEV * sqrt(2 * PI)) * exp(-pow(range, 2) / (2 * pow(LIKELIHOOD_STD_DEV, 2)));
+
     return probability;
 }

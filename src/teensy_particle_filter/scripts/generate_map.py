@@ -23,6 +23,7 @@ class Map():
         self.grid = []
 
     def add_box(self, box):
+
         self.boxes.append(box)
 
     def generate_map_grid(self):
@@ -30,12 +31,40 @@ class Map():
         # Populate the map grid with 0s
         grid = [[0 for x in range(int(-int(self.width/self.resolution)/2), int(int(self.width/self.resolution)/2))] for y in range(int(-int(self.height/self.resolution)/2), int(int(self.height/self.resolution)/2))]
 
-        # Populate the map grid with 1s for each
+        # Populate the map grid with 1s for each and ensure all boxes are the same size    
+
+        # TODO : FIX THE FUCKING BOXES (no squooshing)
+
         for box in self.boxes:
-            print("Box: x: {}, y: {}".format(box.x, box.y))
-            for x in range(int((box.x + self.width/2)/self.resolution) , int((box.x + box.width + self.width/2)/self.resolution)):
-                for y in range(int((box.y + self.height/2)/self.resolution), int((box.y + box.height + self.height/2)/self.resolution)):
+            # print("Box: x: {}, y: {}".format(box.x, box.y))
+            for x in range(int(round(box.x + self.width/2,5)/self.resolution) , int(round(box.x + box.width + self.width/2,5)/self.resolution)):
+                for y in range(int(round(box.y + self.height/2,5)/self.resolution) ,int(round(box.y + box.height + self.height/2,5)/self.resolution)):
                     grid[y][x] = 1
+
+        for box in self.boxes:
+            # print("Box: x: {}, y: {}".format(box.x, box.y))
+            for x in range(int(round(box.x + self.width/2,5)/self.resolution) +1, int(round(box.x + box.width + self.width/2,5)/self.resolution)-1):
+                for y in range(int(round(box.y + self.height/2,5)/self.resolution) + 1 ,int(round(box.y + box.height + self.height/2,5)/self.resolution) - 1):
+                    grid[y][x] = 0
+
+        # # Remove filling boxes
+        # for box in self.boxes:
+        #     for x in range(int((box.x + self.width/2)/self.resolution) +1, int((box.x + box.width + self.width/2)/self.resolution)-1):
+        #         for y in range(int((box.y + self.height/2)/self.resolution)+1, int((box.y + box.height + self.height/2)/self.resolution)-1):
+        #             grid[y][x] = 0
+                    
+        
+        # # Outline
+        # for box in self.boxes:
+        #     for x in range(int((box.x + self.width/2)/self.resolution) , int((box.x + box.width + self.width/2)/self.resolution)):
+        #         grid[int((box.y + self.height/2)/self.resolution)][x] = 1
+        #         grid[int((box.y + box.height + self.height/2)/self.resolution) - 1][x] = 1
+
+        #     for y in range(int((box.y + self.height/2)/self.resolution), int((box.y + box.height + self.height/2)/self.resolution)):
+        #         grid[y][int((box.x + self.width/2)/self.resolution)] = 1
+        #         grid[y][int((box.x + box.width + self.width/2)/self.resolution) - 1] = 1
+        # grid[int((box.y + box.height + self.height/2)/self.resolution)][int((box.x + box.width + self.width/2)/self.resolution)] = 1
+            
 
         # Draw walls
         for x in range(0, int(self.width/self.resolution)):
@@ -58,25 +87,26 @@ class Map():
         return self.grid
 
     def save_map_to_file(self):
-            array_string = "{"
-            for col in self.grid:
-                temp_string = "{"
-                for data in col:
-                    if data:
-                        temp_string += "true"
-                    else:
-                        temp_string += "false"
-                    temp_string += ","
-                temp_string = temp_string[:-1] +'},\n'
-                array_string +=temp_string
-            array_string = array_string[:-2] + '};'
 
-            array_string = "const bool map_array[{}][{}] = {}".format(self.grid.shape[0],self.grid.shape[1],array_string)
-            map_string = '#ifndef MAP_H\n#define MAP_H\n{}\n#endif\n'.format(array_string)    
+        array_string = "{"
+        for col in self.grid:
+            temp_string = "{"
+            for data in col:
+                if data:
+                    temp_string += "true"
+                else:
+                    temp_string += "false"
+                temp_string += ","
+            temp_string = temp_string[:-1] +'},\n'
+            array_string +=temp_string
+        array_string = array_string[:-2] + '};'
 
-            text_file = open('../include/map_array.h', "w")
-            text_file.write(map_string)
-            text_file.close()
+        array_string = "const bool map_array[{}][{}] = {}".format(self.grid.shape[0],self.grid.shape[1],array_string)
+        map_string = '#ifndef MAP_H\n#define MAP_H\n{}\n#endif\n'.format(array_string)    
+
+        text_file = open('../include/map_array.h', "w")
+        text_file.write(map_string)
+        text_file.close()
 
     def write_pgm(self):
         """ Write grayscale image in PGM format to file.
@@ -97,7 +127,7 @@ class Map():
         fout.write(pgmHeader_byte)
 
         # write the data to the file 
-        img = np.reshape(self.grid*255,(height,width))
+        img = np.reshape((1-self.grid)*255,(height,width))
 
         for j in range(height):
             bnd = list(img[j,:])
@@ -129,5 +159,5 @@ map.save_map_to_file()
 map.write_pgm()
 
 plt.figure()
-plt.imshow(np.array(grid*255))
+plt.imshow(np.array(grid))
 plt.show()

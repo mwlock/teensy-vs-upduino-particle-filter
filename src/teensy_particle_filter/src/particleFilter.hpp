@@ -4,6 +4,8 @@
 
 #include <vector>
 
+#include "../include/map_array.h"
+#include <tuple>
 #include "particle.hpp"
 #include "motionModel.hpp"
 #include "sensorModel.hpp"
@@ -41,6 +43,7 @@ class ParticleFilter
 {
 private:
     std::vector<Particle> particles;
+    std::vector<std::tuple<double, double>> map_obstacles;
     
     MotionModel motionModel;
     SensorModel sensorModel;
@@ -68,6 +71,7 @@ public:
 
     ParticleFilter();
     void initParticleFilter();
+    std::vector<std::tuple<double, double>> getMapObstacles();
     std::tuple<geometry_msgs__msg__PoseArray,geometry_msgs__msg__Pose> updateParticles();
 
     void updateLatestOdom(nav_msgs__msg__Odometry odom);

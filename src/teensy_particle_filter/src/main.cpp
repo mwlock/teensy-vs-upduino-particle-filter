@@ -23,6 +23,10 @@
 // Random numbers
 #include "FastRNG.hpp"
 
+// Particle filter parameters
+#define RESAMPLING_FREQUENCY 3 // Hz
+#define RESAMPLING_TIME_MILLISECONDS int((1.0/RESAMPLING_FREQUENCY)*1000)  // ms
+
 #if !defined(MICRO_ROS_TRANSPORT_ARDUINO_SERIAL)
 #error This example is only avaliable for Arduino framework with serial transport.
 #endif
@@ -287,7 +291,7 @@ void setup() {
     "debug"));
 
   // create timer,
-  const unsigned int timer_timeout = 200; // in ms
+  const unsigned int timer_timeout = RESAMPLING_TIME_MILLISECONDS; // in ms
   RCCHECK(rclc_timer_init_default(
     &timer,
     &support,
@@ -334,7 +338,7 @@ void setup() {
 }
 
 void loop() {
-  delay(100);
+  // delay(100);
 
   // Syncronize time
   RCCHECK(rmw_uros_sync_session(timeout_ms));
