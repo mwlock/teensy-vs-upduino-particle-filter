@@ -30,6 +30,7 @@
 // micro-ROS messages
 rcl_publisher_t publisher;
 rcl_publisher_t publisherPoseArray;
+rcl_publisher_t publisherEstimatedPose;
 rcl_publisher_t publisherDebug;
 
 rcl_subscription_t subscriber_odom;
@@ -40,12 +41,14 @@ std_msgs__msg__Int32 msg;
 nav_msgs__msg__Odometry odometryMsg;
 sensor_msgs__msg__LaserScan laserScanMsg;
 geometry_msgs__msg__PoseArray poseArray;
+geometry_msgs__msg__Pose estimatedPoseMsg;
 std_msgs__msg__String stringMsg;
 
 // Executors
 rclc_executor_t executor;
 rclc_executor_t executor_scan_sub;
 rclc_executor_t executor_odom_sub;
+rclc_executor_t executor_estimated_pose_pub;
 rclc_executor_t executor_particle_cloud_pub;
 rclc_executor_t executor_string_pub;
 
@@ -109,24 +112,30 @@ void timer_callback(rcl_timer_t * timer, int64_t last_call_time) {
     }
 
     // Update particle set
-    particleFilter.updateParticles();
-    // publishDebugMessage("updated particles");
+    geometry_msgs__msg__Pose estimatedPose;
+    geometry_msgs__msg__PoseArray particleCloud;
+    std::tie(particleCloud,estimatedPose) = particleFilter.updateParticles();
 
-    // Calculate pose array
-    geometry_msgs__msg__PoseArray particleCloud = particleFilter.getPoseArray();
-    // publishDebugMessage("got pose array");
+    // Print "Hey, update!" to debug
+    publishDebugMessage("Hey, update!"); 
 
-    // Publish pose array
-    RCSOFTCHECK(rcl_publish(&publisherPoseArray, &particleCloud, NULL));
-    // publishDebugMessage("published pose array");
-
-    // Calculate estimated pose
+    // Calculate pose array and publish PoseArray
+    // geometry_msgs__msg__PoseArray particleCloud = particleFilter.getPoseArray();  
+    // // Calculate estimated pose
     // geometry_msgs__msg__Pose estimatedPose = particleFilter.etimatePose();
+    
 
     // Update the latest odom used
     particleFilter.updatePreviousOdom();
-    // publishDebugMessage("updated previous odom");
 
+    // Print "Hey, publish!" to debug
+    publishDebugMessage("Hey, updated odom!");
+
+    RCSOFTCHECK(rcl_publish(&publisherPoseArray, &particleCloud, NULL));
+    RCSOFTCHECK(rcl_publish(&publisherEstimatedPose, &estimatedPose, NULL));
+
+    // Print "Hey, published!" to debug
+    publishDebugMessage("Hey, published!");
 
   }
 }
@@ -163,14 +172,7 @@ void odom_subscription_callback(const void *msgin) {
   lastOdom.twist.twist.linear.x = msg->twist.twist.linear.x;
   lastOdom.twist.twist.linear.y = msg->twist.twist.linear.y;
   lastOdom.twist.twist.linear.z = msg->twist.twist.linear.z; 
-
-  // Print pose of latest odom
-  char buffer[100];
-  sprintf(buffer, "Odom poose: %f, %f, %f", lastOdom.pose.pose.position.x, lastOdom.pose.pose.position.y, lastOdom.pose.pose.position.z);
-  publishDebugMessage(buffer);
-
   particleFilter.updateLatestOdom(lastOdom);
-  publishDebugMessage("updated latest odom");
 
 }
 
@@ -205,7 +207,8 @@ void setup() {
   );
 
   // Configure serial transport
-  Serial.begin(115200);
+  // Serial.begin(115200);
+  Serial.begin(921600);
   set_microros_serial_transports(Serial);
   delay(2000);
 
@@ -267,7 +270,14 @@ void setup() {
     &publisherPoseArray,
     &node,
     ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, PoseArray),
-    "particlecloud"));
+    "/particle_filter/particle_pose_array"));
+
+  // Create estimated pose publisher
+  RCCHECK(rclc_publisher_init_default(
+    &publisherEstimatedPose,
+    &node,
+    ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Pose),
+    "particle_filter/esimated_pose"));
 
   // debug publisher
   RCCHECK(rclc_publisher_init_default(
@@ -275,11 +285,6 @@ void setup() {
     &node,
     ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, String),
     "debug"));
-  // initDebugPublisher(&node);
-
-  // Make debug publisher
-  // DebugPublisher & debug_publisher = DebugPublisher::getInstance();
-  // debug_publisher.initPublisher(&node);
 
   // create timer,
   const unsigned int timer_timeout = 200; // in ms
@@ -301,6 +306,7 @@ void setup() {
 
   RCCHECK(rclc_executor_init(&executor_particle_cloud_pub, &support.context, 1, &allocator)); // particle cloud publisher
   RCCHECK(rclc_executor_init(&executor_string_pub, &support.context, 1, &allocator)); // string publisher
+  RCCHECK(rclc_executor_init(&executor_estimated_pose_pub, &support.context, 1, &allocator)); // estimated pose publisher
 
   // ==================================================================================================================================================
   // =                                                                                                                                                =
@@ -339,6 +345,9 @@ void loop() {
   RCSOFTCHECK(rclc_executor_spin_some(&executor_scan_sub, RCL_MS_TO_NS(100)));
   RCSOFTCHECK(rclc_executor_spin_some(&executor_particle_cloud_pub, RCL_MS_TO_NS(100)));
   RCSOFTCHECK(rclc_executor_spin_some(&executor_string_pub, RCL_MS_TO_NS(100)));
+  RCSOFTCHECK(rclc_executor_spin_some(&executor_estimated_pose_pub, RCL_MS_TO_NS(100)));
+
+
 
   if (!particleFilter.isParticlesInitialised()){
 

@@ -8,6 +8,7 @@
 #include <math.h>
 #include <random>
 #include <tuple>
+#include <stdio.h>
 
 #include "quat.hpp"
 #include "FastRNG.hpp"
@@ -28,7 +29,8 @@ public:
     static geometry_msgs__msg__Pose sampleMotionModel(
         geometry_msgs__msg__Pose previous_xt,
         geometry_msgs__msg__Pose latestOdom,
-        geometry_msgs__msg__Pose prevOdom
+        geometry_msgs__msg__Pose prevOdom,
+        void (*printDebug)(const char*)
     );
 
     static std::tuple<double, double, double> getPoseDelta(

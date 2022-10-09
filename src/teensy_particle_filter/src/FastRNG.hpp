@@ -71,17 +71,17 @@ private:
 /* generate N(0,1) random variable using "ratio of uniform" method 
    taken from "Numerical recipies in C++" 
  */
-template<class random_t> inline float normalLaw(random_t & gen, double mean, double sigma)
-    {
-    float u, v, x, y, q;
-    do {
-        u = gen.unif(); v = 1.7156*(gen.unif() - 0.5);
-        x = u - 0.449871; y = abs(v) + 0.386595;
-        q = (x*x) + y * (0.19600*y - 0.25472*x);
-        } 
-    while ((q > 0.27597) && (q > 0.27846 || (v*v) > -4.*logf(u)*(u*u)));
-    return (v / u) * sigma + mean;
-    }
+// template<class random_t> inline float normalLaw(random_t & gen, double mean, double sigma)
+//     {
+//     float u, v, x, y, q;
+//     do {
+//         u = gen.unif(); v = 1.7156*(gen.unif() - 0.5);
+//         x = u - 0.449871; y = abs(v) + 0.386595;
+//         q = (x*x) + y * (0.19600*y - 0.25472*x);
+//         } 
+//     while ((q > 0.27597) && (q > 0.27846 || (v*v) > -4.*logf(u)*(u*u)));
+//     return (v / u) * sigma + mean;
+//     }
 
 inline double normalDistribution(double mean, double sigma){
 

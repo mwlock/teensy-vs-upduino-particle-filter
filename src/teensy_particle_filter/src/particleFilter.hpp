@@ -7,6 +7,7 @@
 #include "particle.hpp"
 #include "motionModel.hpp"
 #include "sensorModel.hpp"
+#include "FastRNG.hpp"
 
 #include "../config/mcl.h"
 
@@ -34,6 +35,8 @@
 // Microros
 #include <micro_ros_utilities/type_utilities.h>
 
+#define ALMOST_ZERO 1e-15
+
 class ParticleFilter
 {
 private:
@@ -49,6 +52,9 @@ private:
     sensor_msgs__msg__LaserScan latestLaserScan;
     geometry_msgs__msg__PoseArray poseArray;
 
+    geometry_msgs__msg__Pose prev_estimated_pose;
+    geometry_msgs__msg__PoseArray prev_pose_array;
+
     bool lastUsedOdomInitialised;
     bool lastOdomInitialised;
     bool particleFilterInitialised;
@@ -62,7 +68,7 @@ public:
 
     ParticleFilter();
     void initParticleFilter();
-    void updateParticles();
+    std::tuple<geometry_msgs__msg__PoseArray,geometry_msgs__msg__Pose> updateParticles();
 
     void updateLatestOdom(nav_msgs__msg__Odometry odom);
     void updatePreviousOdom();

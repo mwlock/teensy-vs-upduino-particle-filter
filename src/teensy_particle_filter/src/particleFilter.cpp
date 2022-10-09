@@ -75,9 +75,14 @@ void ParticleFilter::initParticleFilter(){
 
         Particle particle = Particle();                                                     // Create new particle
 
-        double x = (double)rand()/(double)RAND_MAX * X_WIDTH - X_WIDTH/2;
-        double y = (double)rand()/(double)RAND_MAX * Y_WIDTH - Y_WIDTH/2;
-        double yaw = (double)rand()/(double)RAND_MAX * YAW_WIDTH - YAW_WIDTH/2;
+        // Initialise particle position using normal distribution around center position
+        double x = normalDistribution(0, 0.05);
+        double y = normalDistribution(0, 0.05);
+        double yaw = normalDistribution(0, 0.01);
+
+        // double x = (double)rand()/(double)RAND_MAX * X_WIDTH - X_WIDTH/2;
+        // double y = (double)rand()/(double)RAND_MAX * Y_WIDTH - Y_WIDTH/2;
+        // double yaw = (double)rand()/(double)RAND_MAX * YAW_WIDTH - YAW_WIDTH/2;
         
         particle.initParticle(x, y, yaw, 1.0/NUM_OF_PARTICLES);                             // Init the particles
         particles.push_back(particle);                                                      // Append particle to the vector (dynamic list)
@@ -94,12 +99,12 @@ void ParticleFilter::initParticleFilter(){
 
 }
 
-void ParticleFilter::updateParticles(){
+std::tuple<geometry_msgs__msg__PoseArray,geometry_msgs__msg__Pose> ParticleFilter::updateParticles(){
 
     // Check if new particle data came in 
     if (Quat::arePosesEqual(latestOdom, previousOdom)) {
         this->printDebug("No new data");
-        return;
+        return std::make_tuple(this->prev_pose_array, this->prev_estimated_pose);
     }
 
     updating = true;
@@ -114,11 +119,12 @@ void ParticleFilter::updateParticles(){
         geometry_msgs__msg__Pose predictedPose = motionModel.sampleMotionModel(
             currentPose,
             latestOdom,
-            previousOdom
+            previousOdom,
+            this->printDebug
         );  // predict the pose using the motion model
 
         // Determine the weight of the particle
-        double weight = sensorModel.sampleSensorModel(predictedPose, latestLaserScan);
+        double weight = sensorModel.sampleSensorModel(predictedPose, latestLaserScan, printDebug);
 
         // Create new particle
         Particle newParticle = Particle();
@@ -130,37 +136,57 @@ void ParticleFilter::updateParticles(){
 
     }
 
+    // Print all particle weights
+    // for (int i = 0; i < NUM_OF_PARTICLES; i++) {
+    //     char buffer[100];
+        // sprintf(buffer, "Particle %d: weight = %f", i, newParticles.at(i).weight);
+    //     this->printDebug(buffer);
+    // }
+
     // Normalise the weights of the new particles
     double totalWeight = 0;
-    for(Particle particle : newParticles){
-        totalWeight += particle.weight;
+    
+    // Iterate through new particles using index
+    for (int i = 0; i < NUM_OF_PARTICLES; i++) {
+        totalWeight += newParticles.at(i).weight;
     }
-    for(Particle particle : newParticles){
-        particle.weight = particle.weight / totalWeight;
+    // Iterate through new particles using index
+    if (totalWeight > ALMOST_ZERO) {
+        for (int i = 0; i < NUM_OF_PARTICLES; i++) {
+            newParticles.at(i).weight /= totalWeight;
+        }
+    } else {
+        for (int i = 0; i < NUM_OF_PARTICLES; i++) {
+            newParticles.at(i).weight = 1.0/NUM_OF_PARTICLES;
+        }
     }
+    
 
     // Clear the current particles
-    particles.clear();
+    this->particles.clear();
 
     // Copy the new particles to the current particles
     for(Particle particle : newParticles){
-        particles.push_back(particle);
+        this->particles.push_back(particle);
     }
 
-    // Estimate the pose of the robot
-    // geometry_msgs__msg__Pose estimatedPose = etimatePose();
-
-    //TODO Publish new path
-
-
-    // Resmaple the particles if needed
-    if(shouldResample()){
-        // resampleParticles();
-    }
 
     // Update the particles 
-    updating = false;
+    geometry_msgs__msg__PoseArray pa = this->getPoseArray();
+    geometry_msgs__msg__Pose est_pose = this->etimatePose();
 
+
+    std::tuple<geometry_msgs__msg__PoseArray,geometry_msgs__msg__Pose> result = std::make_tuple(pa, est_pose);
+
+    // Update previous estimated pose and pose array
+    this->prev_estimated_pose = est_pose;
+    this->prev_pose_array = pa;
+
+    // Resample the particles
+    this->resampleParticles();
+
+    updating = false;
+    return result;
 }
 
 void ParticleFilter::updateLatestOdom(nav_msgs__msg__Odometry odom){
@@ -212,11 +238,6 @@ void ParticleFilter::updateLatestLaserScan(sensor_msgs__msg__LaserScan laserScan
         {
             latestLaserScan.ranges.data[i] = laserScan.ranges.data[i];
         }
-
-        // Print laserScan data
-        char buffer[500];
-        sprintf(buffer, "First range copied: %f", laserScan.ranges.data[10]);
-        this->printDebug(buffer);
     }
 }
 
@@ -228,13 +249,28 @@ geometry_msgs__msg__Pose ParticleFilter::etimatePose(){
     estimatedPose.y = 0;
     estimatedPose.theta = 0;
 
+    double totalWeight = 0;
     // Iterate through the particles and get the average pose
-    for(Particle particle : particles){
+    for(Particle particle : this->particles){
+        totalWeight += particle.weight;
         estimatedPose.x += particle.pose.position.x * particle.weight;
         estimatedPose.y += particle.pose.position.y * particle.weight;
         double particleTheta = Quat::yawFromPose(particle.pose);
         estimatedPose.theta += particleTheta * particle.weight;
+        // if(abs(estimatedPose.x) > 2 || abs(estimatedPose.y) > 2){
+        //     this->printDebug(buffer);
+        //     //Print the particle pose
+        //     sprintf(buffer, "Particle pose: x = %f, y = %f, theta = %f", particle.pose.position.x, particle.pose.position.y, particleTheta);
+        //     this->printDebug(buffer);
+        //     // Print the estimatePose
+        //     sprintf(buffer, "Particle: x = %f, y = %f, theta = %f", estimatedPose.x, estimatedPose.y, estimatedPose.theta);
+        //     this->printDebug(buffer);
+        // }
     }
+    // Print particle total weight
+    // char buffer[100];
+    // sprintf(buffer, "Total weight: %f", totalWeight);
+    // this->printDebug(buffer);
 
     // Convert the estimated pose to a geometry_msgs::Pose
     geometry_msgs__msg__Pose estimatedPoseMsg = geometry_msgs__msg__Pose();
@@ -267,9 +303,14 @@ void ParticleFilter::resampleParticles(){
     // Get the cumulative sum of the weights
     std::vector<double> cumsum;
     double totalWeight = 0;
-    for(Particle particle : particles){
+    for(Particle particle : this->particles){
         totalWeight += particle.weight;
         cumsum.push_back(totalWeight);
+
+        // print particle weight
+        // char buffer[100];
+        // sprintf(buffer, "Particle : weight = %f, total weight = %f", particle.weight,totalWeight);
+        // this->printDebug(buffer);
     }
 
     // Create a new set of particles
@@ -284,23 +325,32 @@ void ParticleFilter::resampleParticles(){
         // Find the index of the particle to resample
         int index = 0;
         for(int j = 0; j < NUM_OF_PARTICLES; j++){
-            if(cumsum[j] > r){
+            if(cumsum.at(j) > r){
                 index = j;
                 break;
             }
         }
-
-        // Add the particle to the new particles list
-        newParticles.push_back(particles[index]);
+        // Create copy of the particle at index index
+        Particle newParticle = Particle();
+        newParticle.pose.position.x = this->particles.at(index).pose.position.x;
+        newParticle.pose.position.y = this->particles.at(index).pose.position.y;
+        newParticle.pose.position.z = this->particles.at(index).pose.position.z;
+        newParticle.pose.orientation.x = this->particles.at(index).pose.orientation.x;
+        newParticle.pose.orientation.y = this->particles.at(index).pose.orientation.y;
+        newParticle.pose.orientation.z = this->particles.at(index).pose.orientation.z;
+        newParticle.pose.orientation.w = this->particles.at(index).pose.orientation.w;
+        newParticle.weight = 1.0/NUM_OF_PARTICLES;
+        // Add the copied particle to the new particles list
+        newParticles.push_back(newParticle);
 
     }
 
     // Clear the current particles
-    particles.clear();
+    this->particles.clear();
 
     // Copy the new particles to the current particles
     for(Particle particle : newParticles){
-        particles.push_back(particle);
+        this->particles.push_back(particle);
     }
 
 }

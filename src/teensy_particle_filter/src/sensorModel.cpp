@@ -4,11 +4,15 @@ SensorModel::SensorModel()
 {
 }
 
-double SensorModel::sampleSensorModel(geometry_msgs__msg__Pose particlePose, sensor_msgs__msg__LaserScan laserScan){
+double SensorModel::sampleSensorModel(
+    geometry_msgs__msg__Pose particlePose, 
+    sensor_msgs__msg__LaserScan laserScan, 
+    void (*printDebug)(const char*))
+    {
 
     // Check if the laser scan is empty
     if (laserScan.ranges.size == 0){
-        return 0;
+        return 1.0;
     }
 
     // Set the particle probability to 1
@@ -27,19 +31,23 @@ double SensorModel::sampleSensorModel(geometry_msgs__msg__Pose particlePose, sen
         double range = laserScan.ranges.data[i];
 
         // Check if the range is valid
-        if(!(range < laserScan.range_min || range > laserScan.range_max)){            
+        if(!(range < laserScan.range_min || range > laserScan.range_max)){   
+
+            // delay(10);
 
             // Project the range onto the map
             double x = mapPose.x + range * cos(mapPose.theta + angle);
             double y = mapPose.y + range * sin(mapPose.theta + angle);
 
             // Calculate dimensions of the map
-            int MAP_HEIGHT =  sizeof(map_array) / sizeof(map_array[0]); 
-            int MAP_WIDTH = sizeof(map_array[0]) / sizeof(bool); 
+            int MAP_HEIGHT =  sizeof(map_array) / sizeof(map_array[0]);
+            int MAP_WIDTH = sizeof(map_array[0]) / sizeof(bool);
 
-            // Check if the laser scan is within the map and bound x and y       
-            if (x > MAP_WIDTH * MAP_RESOLUTION) x = (MAP_WIDTH-1) * MAP_RESOLUTION;        
-            if (y > MAP_HEIGHT * MAP_RESOLUTION) y = (MAP_HEIGHT-1) * MAP_RESOLUTION;
+            // Check if the laser scan is within the map and bound x and y
+            // Turns out this is making the measurement to the wall **always** valid if the projected point is outside the map
+            // if (x > MAP_WIDTH * MAP_RESOLUTION) x = (MAP_WIDTH-1) * MAP_RESOLUTION;        
+            // if (y > MAP_HEIGHT * MAP_RESOLUTION) y = (MAP_HEIGHT-1) * MAP_RESOLUTION;
+
 
             // Find the closest obstacle to the particle
             double obstacleDistance = closestObstacle(x, y);
@@ -49,7 +57,6 @@ double SensorModel::sampleSensorModel(geometry_msgs__msg__Pose particlePose, sen
             
             // Multiply the particle probability by the probability of the laser scan
             particleProbability *= probailityOfHit;
-
         }
 
         // Increment the angle of the laser scan
@@ -61,8 +68,6 @@ double SensorModel::sampleSensorModel(geometry_msgs__msg__Pose particlePose, sen
 
 SimplePose SensorModel::calculateMapPose(geometry_msgs__msg__Pose particlePose){
 
-    // Calculate the map pose of the particle
-
     // Create a simple pose
     SimplePose mapPose;
 
@@ -70,8 +75,6 @@ SimplePose SensorModel::calculateMapPose(geometry_msgs__msg__Pose particlePose){
     mapPose.x = particlePose.position.x;
     mapPose.y = particlePose.position.y;
     mapPose.theta = Quat::yawFromPose(particlePose);
-    // Quaternion q = {particlePose.orientation.w, particlePose.orientation.x, particlePose.orientation.y, particlePose.orientation.z};
-    // mapPose.theta = Quat::ToEulerAngles(q).yaw;
 
     // Determine the pose of the particle in the map
     mapPose.x = mapPose.x - MAP_ORIGIN_X;
@@ -106,13 +109,5 @@ double SensorModel::calculateProbability(double range){
 
     // Evaluate guassian with std of "LIKELIHOOD_STD_DEV" at "range"
     double probability = 1 / (LIKELIHOOD_STD_DEV * sqrt(2 * PI)) * exp(-pow(range, 2) / (2 * pow(LIKELIHOOD_STD_DEV, 2)));
-
-    // Bound the probability
-    if(probability < 0){
-        probability = 0;
-    } else if(probability > 1){
-        probability = 1;
-    }
-
     return probability;
 }

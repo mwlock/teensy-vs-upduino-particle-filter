@@ -6,8 +6,9 @@ MotionModel::MotionModel() {
 geometry_msgs__msg__Pose MotionModel::sampleMotionModel(
         geometry_msgs__msg__Pose previous_xt, // previous pose at time t
         geometry_msgs__msg__Pose latestOdom,
-        geometry_msgs__msg__Pose prevOdom
-    ){
+        geometry_msgs__msg__Pose prevOdom,
+        void (*printDebug)(const char*))
+{
         //check previous odom == last odom and return previousPose
         if (Quat::arePosesEqual(latestOdom, prevOdom)) {
             return previous_xt;
@@ -18,10 +19,15 @@ geometry_msgs__msg__Pose MotionModel::sampleMotionModel(
         
         std::tie(d1, dt, d2) = MotionModel::getPoseDelta(latestOdom, prevOdom);
 
+        // Debug d1, dt, d2
+        // char debug[100];
+        // sprintf(debug, "d1: %f, dt: %f, d2: %f)", d1, dt, d2);
+        // printDebug(debug);
+
         // Uncertainties
         double alpha1 = ALPHA1;
         double alpha2 = ALPHA2;
-        double alpha3 = ALPHA4;
+        double alpha3 = ALPHA3;
         double alpha4 = ALPHA4;
 
         // Standard deviation
@@ -29,15 +35,31 @@ geometry_msgs__msg__Pose MotionModel::sampleMotionModel(
         double std_dev_dt = sqrt((alpha3 * pow(dt,2)) + (alpha4 * pow(d1,2)) + (alpha4 * pow(d2,2)));
         double std_dev_d2 = sqrt((alpha1 * pow(d2,2)) + (alpha2 * pow(dt,2)));
 
+        // Print out the standard deviations
+        // char buffer[100];
+        // sprintf(buffer, "std_dev_d1: %f", std_dev_d1);
+        // printDebug(buffer);
+        // sprintf(buffer, "std_dev_dt: %f", std_dev_dt);
+        // printDebug(buffer);
+        // sprintf(buffer, "std_dev_d2: %f", std_dev_d2);
+        // printDebug(buffer);
+
+
         // Determine noise on motion model
         double noised1 = 0.0;
         double noisedt = 0.0;
         double noised2 = 0.0;
-        
-        // Sample from normal distribution
-        // noised1 = normalDistribution(0, std_dev_d1);
-        // noisedt = normalDistribution(0, std_dev_dt);
-        // noised2 = normalDistribution(0, std_dev_d2);
+
+        // Check if standard deviation is not zero
+        if (std_dev_d1>0){
+            noised1 = normalDistribution(0, std_dev_d1);
+        }
+        if (std_dev_dt>0){
+            noisedt = normalDistribution(0, std_dev_dt);
+        }
+        if (std_dev_d2>0){
+            noised2 = normalDistribution(0, std_dev_d2);
+        }
 
         double t_d1 = Quat::angleDiff(d1,noised1);
         double t_dt = dt + noisedt;
@@ -48,9 +70,9 @@ geometry_msgs__msg__Pose MotionModel::sampleMotionModel(
         double curr_y = previous_xt.position.y;
         double curr_yaw = Quat::yawFromPose(previous_xt);
 
-        double x = curr_x - (t_dt * cos(curr_yaw + t_d1));
-        double y = curr_y - (t_dt * sin(curr_yaw + t_d1));
-        double yaw = curr_yaw - (t_d1 + t_d2);
+        double x = curr_x + (t_dt * cos(curr_yaw + t_d1));
+        double y = curr_y + (t_dt * sin(curr_yaw + t_d1));
+        double yaw = curr_yaw + t_d1 + t_d2;
 
         // Get new pose
         geometry_msgs__msg__Pose newPose = Quat::poseFromXYZRPY(x,y,0,0,0,yaw);
@@ -71,16 +93,16 @@ std::tuple<double, double, double> MotionModel::getPoseDelta(
         // Get x,y, theta from previous particle position
         // ----------------------------------------------
         double x, y, theta;
-        x = xt.position.x;
-        y = xt.position.y;            
-        theta = Quat::yawFromPose(xt);
+        x = previous_xt.position.x;
+        y = previous_xt.position.y;            
+        theta = Quat::yawFromPose(previous_xt);
         // ----------------------------------------------
 
         // Get x_prime, y_prime, theta_prime from previous particle position
         // ----------------------------------------------
-        double x_prime = previous_xt.position.x;
-        double y_prime = previous_xt.position.y;
-        double theta_prime = Quat::yawFromPose(previous_xt);
+        double x_prime = xt.position.x;
+        double y_prime = xt.position.y;
+        double theta_prime = Quat::yawFromPose(xt);
         // ----------------------------------------------
 
         // Calculate deltas
@@ -98,4 +120,4 @@ std::tuple<double, double, double> MotionModel::getPoseDelta(
         d2 = delta_rotation2;
 
         return std::make_tuple(d1, dt, d2);
-    }   
+    }
