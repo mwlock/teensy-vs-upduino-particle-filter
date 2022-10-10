@@ -31,7 +31,6 @@
 #include <exception>
 
 // Random number generator
-#include <Entropy.h>
 #include <random>
 
 // Microros

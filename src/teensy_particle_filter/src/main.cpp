@@ -76,8 +76,6 @@ rcl_allocator_t allocator;
 rcl_node_t node;
 rcl_timer_t timer;
 
-#include <Entropy.h>
-
 // Particle filter
 ParticleFilter particleFilter;
 
@@ -86,6 +84,8 @@ ParticleFilter particleFilter;
 
 // Global variables
 bool ledStatus = false;
+bool sent_config = false;
+char configString[1000];
 nav_msgs__msg__Odometry lastOdom;
 
 //consts
@@ -141,6 +141,12 @@ void timer_callback(rcl_timer_t * timer, int64_t last_call_time) {
     // Check if odom is initalised (jump out function if not)
     if (!particleFilter.isInitialised()){
       return;
+    }
+
+    // Check if config has been sent
+    if (!sent_config){
+      rcl_publish(&publisherConfigString, &configStringMsg, NULL);
+      sent_config = true;
     }
 
     // Update particle set
@@ -221,9 +227,6 @@ void scan_subscription_callback(const void *msgin) {
 }
 
 void setup() {
-
-  // Initialise Entropy
-  Entropy.Initialize();
 
   // Allocate memory for LaserScan
   static micro_ros_utilities_memory_conf_t conf = {0};
@@ -411,11 +414,7 @@ void loop() {
     publishDebugMessage(buffer);
     // MemoryUtil::getFreeITCM();
 
-    // Publish config string
-    std_msgs__msg__String configStringMsg;
-
     // Compose config string with number of particles using sprintf
-    char configString[1000];
     int char_used = sprintf(configString, "==============Config string==============:\n" \
                                           "num_particles: %d\n" \
                                           "memory used (kb): %d\n"\
@@ -438,8 +437,6 @@ void loop() {
     , (int)NUM_OF_PARTICLES, stack+heap+psram,LIKELIHOOD_STD_DEV, ALPHA1, ALPHA2, ALPHA3, ALPHA4, NOISE_MULTIPLIER, RESAMPLING_FREQUENCY, RESAMPLING_TIME_MILLISECONDS);
     configStringMsg.data.data = configString;
     configStringMsg.data.size = char_used;
-    rcl_publish(&publisherConfigString, &configStringMsg, NULL);
-
 
     // ==================================================================================================================================================
     // =                                                                                                                                                =

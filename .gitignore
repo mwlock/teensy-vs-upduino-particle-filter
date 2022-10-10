@@ -1,3 +1,6 @@
 .vscode
 *.log
 *log
+*.bag
+rosbag2_*
+*.pdf
