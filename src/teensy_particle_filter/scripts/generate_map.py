@@ -135,6 +135,45 @@ class Map():
 
         fout.close()
 
+    
+    def save_obstacle_array(self):
+
+        # Save x and y indexes of of grid cells that are obstacles to two different c arrays
+
+        obstacle_x = []
+        obstacle_y = []
+
+        for y in range(self.grid.shape[0]):
+            for x in range(self.grid.shape[1]):
+                if self.grid[y][x]:
+                    obstacle_x.append(x)
+                    obstacle_y.append(y)
+
+        array_string = "{"
+        for data in obstacle_x:
+            array_string += str(data) + ','
+        array_string = array_string[:-1] + '};'
+
+        array_string = "const int obstacle_x[{}] = {}".format(len(obstacle_x),array_string)
+        map_string = '#ifndef OBSTACLE_X_H\n#define OBSTACLE_X_H\n{}\n#endif\n'.format(array_string)
+
+        text_file = open('../include/obstacle_x.h', "w")
+        text_file.write(map_string)
+        text_file.close()
+
+        array_string = "{"
+        for data in obstacle_y:
+            array_string += str(data) + ','
+        array_string = array_string[:-1] + '};'
+
+        array_string = "const int obstacle_y[{}] = {}".format(len(obstacle_y),array_string)
+        map_string = '#ifndef OBSTACLE_Y_H\n#define OBSTACLE_Y_H\n{}\n#endif\n'.format(array_string)
+
+        text_file = open('../include/obstacle_y.h', "w")
+        text_file.write(map_string)
+        text_file.close()
+
+
 
 WIDTH = 1.5
 HEIGHT = 1.5
@@ -157,6 +196,7 @@ print("Number of rows: {}".format(len(grid)))
 # Save map to file
 map.save_map_to_file()
 map.write_pgm()
+map.save_obstacle_array()
 
 plt.figure()
 plt.imshow(np.array(grid))
