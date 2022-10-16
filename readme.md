@@ -1,5 +1,33 @@
 # Evaluating the Particle Efficiency Between the Teensy 4.1 and UPduino v3.1 FPGA for Robot Localisation
 
+*Documentation is not finalised*
+
+## Teensy
+
+## FPGA
+
+## Dualsense Controller
+
+Should you wish controll the e-puck with a playstation 5 dualsense controller, follow the following steps.
+
+Firstly, we need to follow the installation procedure for ```pydualsense``` as shown [here](https://github.com/flok/pydualsense).
+
+1. Install pydualsense
+
+```
+sudo apt install libhidapi-dev
+```
+
+```
+pip install --upgrade pydualsense
+```
+
+2. When running experiments, disable the random bound by setting ```rb:=false```. See the exampe below
+
+```
+https://github.com/matthew-william-lock/ros2-ds
+```
+
 ## Requirements
 
 - [Ubuntu 22.04]()
