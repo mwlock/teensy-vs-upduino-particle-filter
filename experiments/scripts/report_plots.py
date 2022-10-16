@@ -6,8 +6,6 @@ import os
 import re
 from pathlib import Path
 from argparse import ArgumentParser
-from this import d
-# from this import d
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -18,11 +16,13 @@ from rosbags.highlevel import AnyReader
 plt.style.reload_library()
 plt.style.use(['science', 'no-latex','high-vis'])
 # plt.style.use(['science', 'ieee'])
-plt.rcParams.update({'xtick.labelsize': 20,
-                    'ytick.labelsize': 20,
-                    'axes.titlesize': 20,
-                    'axes.labelsize': 20,
-                    'legend.fontsize': 20,
+
+text_size = 23
+plt.rcParams.update({'xtick.labelsize': text_size,
+                    'ytick.labelsize': text_size,
+                    'axes.titlesize': text_size,
+                    'axes.labelsize': text_size,
+                    'legend.fontsize': text_size,
                     'legend.frameon' : True
                     })
 
@@ -116,12 +116,6 @@ for i in range(1, 3+1):
         # dataframe = pd.concat([odom_dataframe, ground_truth_dataframe,estimated_position_dataframe]).fillna(method='bfill').fillna(method='ffill').drop_duplicates()
         # dataframe = dataframe[5:]
 
-# Create time axis 
-
-print(sum([type(dataframe.index.values[i]) == type(dataframe.index.values[0]) for i in range(len(dataframe.index.values))]))
-print(len(dataframe.index.values))
-
-
 # Concert to seconds
 time = dataframe.index.values
 time = time / np.timedelta64(1, 's')
@@ -151,16 +145,33 @@ ax.set_title('Update time for each experiment')
 ax.grid(True)
 
 # Calculate standard deviation for each experiment
-std_1 = np.std(update_time_1)
-std_2 = np.std(update_time_2)
-std_3 = np.std(update_time_3)
+std_list = [np.std(update_time_1), np.std(update_time_2), np.std(update_time_3)]
 
-# Turn on grid
+# Calculate mean for each experiment
+mean_list = [np.mean(update_time_1), np.mean(update_time_2), np.mean(update_time_3)]
 
+# Add legend for number of particles and standard deviation for each experiment
+legend_list = []
+for i in range(len(num_particles_list)):
+    legend_list.append(f'{num_particles_list[i]} particles : mean:{mean_list[i]:.2f}, std: {std_list[i]:.2f}')
 
-# Use the standard deviation in the legend with the number of particles
-ax.legend([f'Particles : {num_particles_list[0]}, std: {std_1:.2f} ms', f'Particles : {num_particles_list[1]}, std: {std_2:.2f} ms', f'Particles : {num_particles_list[2]}, std: {std_3:.2f} ms'])
+ax.legend(legend_list, loc='upper right')
 save_plot(fig, 'update_time')
+
+# Point wise division of update time
+
+mean_update_time_1 = np.mean(update_time_1)
+mean_update_time_2 = np.mean(update_time_2)
+mean_update_time_3 = np.mean(update_time_3)
+
+slowdown_1 = mean_update_time_1 / mean_update_time_1
+slowdown_2 = mean_update_time_2 / mean_update_time_1
+slowdown_3 = mean_update_time_3 / mean_update_time_1
+
+# Print mean update time for each experiment
+print(f'Mean slowdown time for experiment 1: {slowdown_1:.2f}')
+print(f'Mean slowdown time for experiment 2: {slowdown_2:.2f}')
+print(f'Mean slowdown time for experiment 3: {slowdown_3:.2f}')
 
 # Iterate and plot the distance error between the estimated position and the ground truth, and the odom position and the ground truth
 for i in range(1, len(num_particles_list) + 1):
@@ -184,18 +195,21 @@ for i in range(1, len(num_particles_list) + 1):
     ax.plot(time, odom_distance_error, label='Odom distance error')
 
     ax.set_xlabel('Time [s]')
-    ax.set_ylabel('Distance error [m]')
-    ax.set_title(f'Distance error for {num_particles_list[i-1]} particles')
+    ax.set_ylabel('Error [m]')
+    ax.set_title(f'Error for {num_particles_list[i-1]} particles')
     ax.grid(True)
 
+    # Get RMSE for each experiment
+    rmse_estimated = np.sqrt(np.mean(estimated_distance_error**2))
+    rmse_odom = np.sqrt(np.mean(odom_distance_error**2))
+
     # Place root mean square error in the legend to three decimals
-    ax.legend([f'RMSE: {np.sqrt(np.mean(estimated_distance_error**2)):.3f} m', f'RMSE: {np.sqrt(np.mean(odom_distance_error**2)):.3f} m'])
-        
+    ax.legend([f'Particle Filter, RMSE: {rmse_estimated:.3f} m', f'Odometry, RMSE: {rmse_odom:.3f} m'],loc='upper left')
+
 
     save_plot(fig, f'distance_error_{num_particles_list[i-1]}')
 
 # Iterate through the experiments and plot the estimated position, ground truth position, and odom position
-
 for i in range(1, len(num_particles_list) + 1):
 
     # Get estimated position
@@ -215,7 +229,7 @@ for i in range(1, len(num_particles_list) + 1):
     ax.plot(odom_x, odom_y, label='Odom position')
 
     ax.set_xlabel('X [m]')
-    ax.set_ylabel('Y m]')
+    ax.set_ylabel('Y [m]')
     ax.set_title(f'Estimated, ground truth, and odom position for {num_particles_list[i-1]} particles')
     ax.grid(True)
 
@@ -248,7 +262,7 @@ ax.set_xlabel('Number of particles')
 
 ax.set_ylabel('Memory usage [kB]')
 ax.set_title('Memory usage for each experiment')
-ax.grid(False)
+ax.grid(True)
 
 # Make the bars thicker
 # list num_particles_list to list of strings
