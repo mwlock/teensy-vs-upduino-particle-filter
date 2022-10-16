@@ -25,7 +25,7 @@ pip install --upgrade pydualsense
 2. When running experiments, disable the random bound by setting ```rb:=false```. See the exampe below
 
 ```
-https://github.com/matthew-william-lock/ros2-ds
+ros2 launch mcl mcl_teensy_launch.py rviz:=true mission_time:=10 rb:=false
 ```
 
 ## Requirements
