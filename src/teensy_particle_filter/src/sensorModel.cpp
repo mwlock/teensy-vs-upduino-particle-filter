@@ -27,7 +27,29 @@ double SensorModel::sampleSensorModel(
     // Angle of the laser scan
     double angle = laserScan.angle_min;
 
+    // If hardware acceleration is enabled
+    #ifdef USE_HARDWARE_ACCELERATION
+    
+    // Array of the projected points
+    uint16_t projectedPoints[NUM_OF_PARTICLES*NUM_LASERS][2];
+    
+    for(int i = 0; i < laserScan.ranges.size; i++){
+        if(!(range < laserScan.range_min || range > laserScan.range_max)){ 
+
+        // Calculate the projected point
+        float x = mapPose.x + laserScan.ranges.data[i] * cos(angle + mapPose.theta);
+        float y = mapPose.y + laserScan.ranges.data[i] * sin(angle + mapPose.theta);
+        calculateGridPose(x, y, &projectedPoints[i][0], &projectedPoints[i][1]);
+        angle += laserScan.angle_increment;
+    }
+
+    // Send the number of 
+        
+    #else
+    
+    // ==================================================================================
     // Loop through all the laser scan ranges
+    // ==================================================================================
     for(int i = 0; i < (uint16_t) laserScan.ranges.size; i++){
 
         // Get the range of the laser scan
@@ -40,14 +62,6 @@ double SensorModel::sampleSensorModel(
             // Project the range onto the map
             double x = mapPose.x + range * cos(mapPose.theta + angle);
             double y = mapPose.y + range * sin(mapPose.theta + angle);
-
-            // Calculate dimensions of the map
-            // int MAP_HEIGHT =  sizeof(map_array) / sizeof(map_array[0]);
-            // int MAP_WIDTH = sizeof(map_array[0]) / sizeof(bool);
-            // Check if the laser scan is within the map and bound x and y
-            // Turns out this is making the measurement to the wall **always** valid if the projected point is outside the map
-            // if (x > MAP_WIDTH * MAP_RESOLUTION) x = (MAP_WIDTH-1) * MAP_RESOLUTION;        
-            // if (y > MAP_HEIGHT * MAP_RESOLUTION) y = (MAP_HEIGHT-1) * MAP_RESOLUTION;
 
             // Find the closest obstacle to the particle
             double obstacleDistance = this->closestObstacle(x, y, printDebug);
@@ -63,6 +77,10 @@ double SensorModel::sampleSensorModel(
         angle += laserScan.angle_increment;
 
     }
+    // ==================================================================================
+
+    #endif
+
     return particleProbability;
 }
 
@@ -81,6 +99,17 @@ SimplePose SensorModel::calculateMapPose(geometry_msgs__msg__Pose particlePose){
     mapPose.y = mapPose.y - MAP_ORIGIN_Y;   
 
     return mapPose;
+}
+
+void SensorModel::calculateGridPose(float x_input, float y_input, u_int16_t* x_output, u_int16_t* y_output){
+
+    // Add the map origin to the x and y
+    float x = x_input + MAP_ORIGIN_X;
+    float y = y_input + MAP_ORIGIN_Y;
+
+    // Calculate the grid pose
+    *x_output = (uint16_t) round(x / MAP_RESOLUTION);
+    *y_output = (uint16_t) round(y / MAP_RESOLUTION);
 }
 
 double SensorModel::closestObstacle(double x, double y, void (*printDebug)(const char*)){

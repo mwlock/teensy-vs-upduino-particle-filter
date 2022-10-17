@@ -136,7 +136,48 @@ std::tuple<geometry_msgs__msg__PoseArray,geometry_msgs__msg__Pose,bool> Particle
     // New particles
     std::vector<Particle> newParticles;
 
+    // Check if particle acceleration is enabled
+    #ifdef USE_HARDWARE_ACCELERATION
+
+        float scans[NUM_LASERS];
+        uint16_t projectedPoints[NUM_OF_PARTICLES*NUM_LASERS][2];
+
+        // Get laser scans from latest laser scans
+        for (int i = 0; i < NUM_LASERS; i++){
+            if(!(range < laserScan.range_min || range > laserScan.range_max)){  
+                scans[i] = this->latestLaserScan.ranges.data[i];
+            }
+        }
+        for (Particle particle : particles){
+
+            geometry_msgs__msg__Pose currentPose = particle.pose;
+            geometry_msgs__msg__Pose predictedPose = motionModel.sampleMotionModel(
+                currentPose,
+                latestOdom,
+                previousOdom,
+                this->printDebug
+            );  // predict the pose using the motion model
+
+            // Create new particle
+            Particle newParticle = Particle();
+            newParticle.pose = predictedPose;
+            newParticle.weight = particle.weight;
+            newParticles.push_back(newParticle);
+
+            // Project the particle onto the map grid
+            SimplePose mapPose = SensorModel::calculateMapPose(predictedPose);
+            float x = mapPose.x + laserScan.ranges.data[i] * cos(angle + mapPose.theta);
+            float y = mapPose.y + laserScan.ranges.data[i] * sin(angle + mapPose.theta);
+            calculateGridPose(x, y, &projectedPoints[i][0], &projectedPoints[i][1]);
+        }
+
+        // Calculate the 
+
+        
+    #else
+    // ==========================================================================================
     // Iterate through current particles
+    // ==========================================================================================
     for(Particle particle : particles){
         geometry_msgs__msg__Pose currentPose = particle.pose;
         geometry_msgs__msg__Pose predictedPose = motionModel.sampleMotionModel(
@@ -158,13 +199,8 @@ std::tuple<geometry_msgs__msg__PoseArray,geometry_msgs__msg__Pose,bool> Particle
         newParticles.push_back(newParticle);
 
     }
-
-    // Print all particle weights
-    // for (int i = 0; i < NUM_OF_PARTICLES; i++) {
-    //     char buffer[100];
-        // sprintf(buffer, "Particle %d: weight = %f", i, newParticles.at(i).weight);
-    //     this->printDebug(buffer);
-    // }
+    // ==========================================================================================
+    #endif
 
     // Normalise the weights of the new particles
     double totalWeight = 0;
@@ -281,20 +317,7 @@ geometry_msgs__msg__Pose ParticleFilter::etimatePose(){
         estimatedPose.y += particle.pose.position.y * particle.weight;
         double particleTheta = Quat::yawFromPose(particle.pose);
         estimatedPose.theta += particleTheta * particle.weight;
-        // if(abs(estimatedPose.x) > 2 || abs(estimatedPose.y) > 2){
-        //     this->printDebug(buffer);
-        //     //Print the particle pose
-        //     sprintf(buffer, "Particle pose: x = %f, y = %f, theta = %f", particle.pose.position.x, particle.pose.position.y, particleTheta);
-        //     this->printDebug(buffer);
-        //     // Print the estimatePose
-        //     sprintf(buffer, "Particle: x = %f, y = %f, theta = %f", estimatedPose.x, estimatedPose.y, estimatedPose.theta);
-        //     this->printDebug(buffer);
-        // }
     }
-    // Print particle total weight
-    // char buffer[100];
-    // sprintf(buffer, "Total weight: %f", totalWeight);
-    // this->printDebug(buffer);
 
     // Convert the estimated pose to a geometry_msgs::Pose
     geometry_msgs__msg__Pose estimatedPoseMsg = geometry_msgs__msg__Pose();
@@ -330,11 +353,6 @@ void ParticleFilter::resampleParticles(){
     for(Particle particle : this->particles){
         totalWeight += particle.weight;
         cumsum.push_back(totalWeight);
-
-        // print particle weight
-        // char buffer[100];
-        // sprintf(buffer, "Particle : weight = %f, total weight = %f", particle.weight,totalWeight);
-        // this->printDebug(buffer);
     }
 
     // Create a new set of particles

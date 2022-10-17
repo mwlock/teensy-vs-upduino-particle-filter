@@ -1,6 +1,6 @@
 // Monte Carlo Particle Filter Config
 
-#define experiment -1
+#define experiment 2
 
 // Set number of particles depending on the experiment
 #if experiment == 1
@@ -16,6 +16,7 @@
 #define NUM_OF_PARTICLES 0
 #endif
 
+#define USE_HARDWARE_ACCELERATION 0
 #define adaptive false
 #define likelihood_model true
 #define epsilon 0.1

@@ -22,7 +22,28 @@ sudo apt install libhidapi-dev
 pip install --upgrade pydualsense
 ```
 
-2. When running experiments, disable the random bound by setting ```rb:=false```. See the exampe below
+2. Give your user the appropriate permissions
+
+```
+sudo chmod -R 777 /dev
+```
+
+3. Clone and install the dualsense driver.
+
+Make sure to carry out these steps in your ```ros2_ws```
+
+```
+git clone https://github.com/matthew-william-lock/ros2-ds
+colcon build
+source install/local_setup.bash
+```
+
+Launch teleop for the controller 
+```
+ros2 launch p9n_node teleop.launch.py
+```
+
+4. Run your experiment, but be sure to disable the random bound by setting ```rb:=false```. See the exampe below
 
 ```
 ros2 launch mcl mcl_teensy_launch.py rviz:=true mission_time:=10 rb:=false
