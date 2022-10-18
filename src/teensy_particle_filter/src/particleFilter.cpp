@@ -123,6 +123,29 @@ bool ParticleFilter::odomWasUpdated(){
     return true;
 }
 
+void ParticleFilter::sendProjectedPoints(uint32_t *points, uint32_t nb_scans){
+    // Send instruction to FPGA
+    const uint8_t startInstruction[4]= {0x00, 0x00, 0x00, 0x00};
+    Serial2.write(startInstruction, 4);
+    // Tell the FPGA how many laser scan there where (big endian)
+    uint8_t numLaserScans[4];
+    numLaserScans[0] = (nb_scans >> 24) & 0xFF;
+    numLaserScans[1] = (nb_scans >> 16) & 0xFF;
+    numLaserScans[2] = (nb_scans >> 8) & 0xFF;
+    numLaserScans[3] = nb_scans & 0xFF;
+    Serial2.write(numLaserScans, 4);
+    // Convert all points to big endian
+    uint8_t pointsBigEndian[NUM_OF_PARTICLES * NUM_LASERS * 4];
+    for (int i = 0; i < NUM_OF_PARTICLES * nb_scans; i++){
+        pointsBigEndian[i*4] = (points[i] >> 24) & 0xFF;
+        pointsBigEndian[i*4 + 1] = (points[i] >> 16) & 0xFF;
+        pointsBigEndian[i*4 + 2] = (points[i] >> 8) & 0xFF;
+        pointsBigEndian[i*4 + 3] = points[i] & 0xFF;
+    }
+    // Send all points to FPGA
+    Serial2.write(pointsBigEndian, NUM_OF_PARTICLES * nb_scans * 4);
+}
+
 std::tuple<geometry_msgs__msg__PoseArray,geometry_msgs__msg__Pose,bool> ParticleFilter::updateParticles(){
 
     // Check if new particle data came in 
@@ -137,16 +160,24 @@ std::tuple<geometry_msgs__msg__PoseArray,geometry_msgs__msg__Pose,bool> Particle
     std::vector<Particle> newParticles;
 
     // Check if particle acceleration is enabled
-    #ifdef USE_HARDWARE_ACCELERATION
+    #if USE_HARDWARE_ACCELERATION
 
-        float scans[NUM_LASERS];
-        uint16_t projectedPoints[NUM_OF_PARTICLES*NUM_LASERS][2];
-
+        float scan_ranges[NUM_LASERS];
+        float scan_angles[NUM_LASERS];
+        // Projected points are store like so (0xXXXXYYYY)
+        // where XXXX is the X coordinate and YYYY is the Y coordinate
+        uint32_t projectedPoints[NUM_OF_PARTICLES*NUM_LASERS];
+        uint8_t num_valid_scans = 0;
         // Get laser scans from latest laser scans
-        for (int i = 0; i < NUM_LASERS; i++){
+        double angle = latestLaserScan.angle_min;
+        for(int i = 0; i < (uint16_t) laserScan.ranges.size; i++){
+            double range = this->latestLaserScan.ranges.data[i];
             if(!(range < laserScan.range_min || range > laserScan.range_max)){  
-                scans[i] = this->latestLaserScan.ranges.data[i];
+                scan_ranges[i] = range;
+                scan_angles[i] = angle;
+                num_valid_scans++;
             }
+            angle += this->latestLaserScan.angle_increment;
         }
         for (Particle particle : particles){
 
@@ -166,13 +197,42 @@ std::tuple<geometry_msgs__msg__PoseArray,geometry_msgs__msg__Pose,bool> Particle
 
             // Project the particle onto the map grid
             SimplePose mapPose = SensorModel::calculateMapPose(predictedPose);
-            float x = mapPose.x + laserScan.ranges.data[i] * cos(angle + mapPose.theta);
-            float y = mapPose.y + laserScan.ranges.data[i] * sin(angle + mapPose.theta);
-            calculateGridPose(x, y, &projectedPoints[i][0], &projectedPoints[i][1]);
+            // Project the laser scans at the new particle position
+            for (int i = 0; i < num_valid_scans; i++){
+                float x = mapPose.x + scan_ranges[i] * cos(scan_angles[i] + mapPose.theta);
+                float y = mapPose.y + scan_ranges[i] * sin(scan_angles[i] + mapPose.theta);
+                calculateGridPose(x, y, &projectedPoints[i]);
+            }
+        }
+        // Send the projected points to the FPGA
+        sendProjectedPoints(projectedPoints, num_valid_scans);
+
+        // Read results from FPGA (constant sized array to avoid reallocation)
+        uint8_t results[NUM_OF_PARTICLES * NUM_LASERS * 2];
+        Serial2.readBytes(results, NUM_OF_PARTICLES * num_valid_scans * 2);
+
+        // Convert results to little endian
+        float resultsLittleEndian[NUM_OF_PARTICLES * NUM_LASERS];
+        for (int i = 0; i < NUM_OF_PARTICLES * num_valid_scans; i++){
+            uint16_t distance_cm = (uint16_t)(((uint16_t)results[i*2]) << 8) | results[i*2 + 1];
+            // Convert to meters and store in array
+            resultsLittleEndian[i] = (float)distance_cm * 0.01;
         }
 
-        // Calculate the 
-
+        // Iterate through all the scans to update the weights of the particles
+        for(int i = 0; i < NUM_OF_PARTICLES; i++){
+            double particleProbability = 1.0;
+            for(int j = 0; j < num_valid_scans; j++){
+                double prob = SensorModel::calculateProbability(
+                    resultsLittleEndian[i*j + j],
+                    this->printDebug
+                )
+                particleProbability *= prob;
+            }
+            newParticle.at(i).weight = particleProbability;
+        }
+        // END OF ACCELERATOR CODE
+        // Do the rest as usual
         
     #else
     // ==========================================================================================

@@ -16,7 +16,7 @@
 #define NUM_OF_PARTICLES 0
 #endif
 
-#define USE_HARDWARE_ACCELERATION 0
+#define USE_HARDWARE_ACCELERATION 1
 #define adaptive false
 #define likelihood_model true
 #define epsilon 0.1
