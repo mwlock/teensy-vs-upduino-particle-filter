@@ -4,6 +4,18 @@
 
 ## Teensy
 
+Steps to run the Teensy code:
+
+x. Run the micro-ROS agent on your host machine
+
+```
+sudo snap install docker
+```
+
+```
+sudo docker run -it --rm -v /dev:/dev -v /dev/shm:/dev/shm --privileged --net=host microros/micro-ros-agent:$ROS_DISTRO serial --dev /dev/ttyACM0 -v6
+```
+
 ## FPGA
 
 ## Dualsense Controller

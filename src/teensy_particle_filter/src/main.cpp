@@ -246,8 +246,9 @@ void setup() {
   delay(2000);
 
   // Init Serial2 if hardware acceleration is enabled
-  #ifdef HARDWARE_ACCELERATION
+  #if USE_HARDWARE_ACCELERATION
     Serial2.begin(3000000);
+    delay(2000);
   #endif
 
   // LED setup and start up indicator

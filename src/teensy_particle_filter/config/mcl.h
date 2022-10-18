@@ -1,6 +1,6 @@
 // Monte Carlo Particle Filter Config
 
-#define experiment 2
+#define experiment 1
 
 // Set number of particles depending on the experiment
 #if experiment == 1

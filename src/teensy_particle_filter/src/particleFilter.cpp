@@ -159,80 +159,87 @@ std::tuple<geometry_msgs__msg__PoseArray,geometry_msgs__msg__Pose,bool> Particle
     // New particles
     std::vector<Particle> newParticles;
 
+    // =====================================================================================================
     // Check if particle acceleration is enabled
+    // =====================================================================================================
     #if USE_HARDWARE_ACCELERATION
 
-        float scan_ranges[NUM_LASERS];
-        float scan_angles[NUM_LASERS];
-        // Projected points are store like so (0xXXXXYYYY)
-        // where XXXX is the X coordinate and YYYY is the Y coordinate
-        uint32_t projectedPoints[NUM_OF_PARTICLES*NUM_LASERS];
-        uint8_t num_valid_scans = 0;
-        // Get laser scans from latest laser scans
-        double angle = latestLaserScan.angle_min;
-        for(int i = 0; i < (uint16_t) laserScan.ranges.size; i++){
-            double range = this->latestLaserScan.ranges.data[i];
-            if(!(range < laserScan.range_min || range > laserScan.range_max)){  
-                scan_ranges[i] = range;
-                scan_angles[i] = angle;
-                num_valid_scans++;
-            }
-            angle += this->latestLaserScan.angle_increment;
-        }
-        for (Particle particle : particles){
+    // Send debug message
+    this->printDebug("Using hardware acceleration");
 
-            geometry_msgs__msg__Pose currentPose = particle.pose;
-            geometry_msgs__msg__Pose predictedPose = motionModel.sampleMotionModel(
-                currentPose,
-                latestOdom,
-                previousOdom,
+
+    float scan_ranges[NUM_LASERS];
+    float scan_angles[NUM_LASERS];
+    // Projected points are store like so (0xXXXXYYYY)
+    // where XXXX is the X coordinate and YYYY is the Y coordinate
+    uint32_t projectedPoints[NUM_OF_PARTICLES*NUM_LASERS];
+    uint8_t num_valid_scans = 0;
+    // Get laser scans from latest laser scans
+    double angle = latestLaserScan.angle_min;
+    for(int i = 0; i < (uint16_t) this->latestLaserScan.ranges.size; i++){
+        double range = this->latestLaserScan.ranges.data[i];
+        if(!(range < this->latestLaserScan.range_min || range > this->latestLaserScan.range_max)){  
+            scan_ranges[i] = range;
+            scan_angles[i] = angle;
+            num_valid_scans++;
+        }
+        angle += this->latestLaserScan.angle_increment;
+    }
+    for (Particle particle : particles){
+
+        geometry_msgs__msg__Pose currentPose = particle.pose;
+        geometry_msgs__msg__Pose predictedPose = motionModel.sampleMotionModel(
+            currentPose,
+            latestOdom,
+            previousOdom,
+            this->printDebug
+        );  // predict the pose using the motion model
+
+        // Create new particle
+        Particle newParticle = Particle();
+        newParticle.pose = predictedPose;
+        newParticle.weight = particle.weight;
+        newParticles.push_back(newParticle);
+
+        // Project the particle onto the map grid
+        SimplePose mapPose = SensorModel::calculateMapPose(predictedPose);
+        // Project the laser scans at the new particle position
+        for (int i = 0; i < num_valid_scans; i++){
+            float x = mapPose.x + scan_ranges[i] * cos(scan_angles[i] + mapPose.theta);
+            float y = mapPose.y + scan_ranges[i] * sin(scan_angles[i] + mapPose.theta);
+            SensorModel::calculateGridPose(x, y, &projectedPoints[i]);
+        }
+    }
+    // Send the projected points to the FPGA
+    sendProjectedPoints(projectedPoints, num_valid_scans);
+
+    // Read results from FPGA (constant sized array to avoid reallocation)
+    uint8_t results[NUM_OF_PARTICLES * NUM_LASERS * 2];
+    Serial2.readBytes(results, NUM_OF_PARTICLES * num_valid_scans * 2);
+
+    // Convert results to little endian
+    float resultsLittleEndian[NUM_OF_PARTICLES * NUM_LASERS];
+    for (int i = 0; i < NUM_OF_PARTICLES * num_valid_scans; i++){
+        uint16_t distance_cm = (uint16_t)(((uint16_t)results[i*2]) << 8) | results[i*2 + 1];
+        // Convert to meters and store in array
+        resultsLittleEndian[i] = (float)distance_cm * 0.01;
+    }
+
+    // Iterate through all the scans to update the weights of the particles
+    for(int i = 0; i < NUM_OF_PARTICLES; i++){
+        double particleProbability = 1.0;
+        for(int j = 0; j < num_valid_scans; j++){
+            double prob = SensorModel::calculateProbability(
+                resultsLittleEndian[i*j + j],
                 this->printDebug
-            );  // predict the pose using the motion model
-
-            // Create new particle
-            Particle newParticle = Particle();
-            newParticle.pose = predictedPose;
-            newParticle.weight = particle.weight;
-            newParticles.push_back(newParticle);
-
-            // Project the particle onto the map grid
-            SimplePose mapPose = SensorModel::calculateMapPose(predictedPose);
-            // Project the laser scans at the new particle position
-            for (int i = 0; i < num_valid_scans; i++){
-                float x = mapPose.x + scan_ranges[i] * cos(scan_angles[i] + mapPose.theta);
-                float y = mapPose.y + scan_ranges[i] * sin(scan_angles[i] + mapPose.theta);
-                calculateGridPose(x, y, &projectedPoints[i]);
-            }
+            );
+            particleProbability *= prob;
         }
-        // Send the projected points to the FPGA
-        sendProjectedPoints(projectedPoints, num_valid_scans);
-
-        // Read results from FPGA (constant sized array to avoid reallocation)
-        uint8_t results[NUM_OF_PARTICLES * NUM_LASERS * 2];
-        Serial2.readBytes(results, NUM_OF_PARTICLES * num_valid_scans * 2);
-
-        // Convert results to little endian
-        float resultsLittleEndian[NUM_OF_PARTICLES * NUM_LASERS];
-        for (int i = 0; i < NUM_OF_PARTICLES * num_valid_scans; i++){
-            uint16_t distance_cm = (uint16_t)(((uint16_t)results[i*2]) << 8) | results[i*2 + 1];
-            // Convert to meters and store in array
-            resultsLittleEndian[i] = (float)distance_cm * 0.01;
-        }
-
-        // Iterate through all the scans to update the weights of the particles
-        for(int i = 0; i < NUM_OF_PARTICLES; i++){
-            double particleProbability = 1.0;
-            for(int j = 0; j < num_valid_scans; j++){
-                double prob = SensorModel::calculateProbability(
-                    resultsLittleEndian[i*j + j],
-                    this->printDebug
-                )
-                particleProbability *= prob;
-            }
-            newParticle.at(i).weight = particleProbability;
-        }
-        // END OF ACCELERATOR CODE
-        // Do the rest as usual
+        newParticles.at(i).weight = particleProbability;
+    }
+    // =====================================================================================================
+    // END OF ACCELERATOR CODE
+    // Do the rest as usual
         
     #else
     // ==========================================================================================

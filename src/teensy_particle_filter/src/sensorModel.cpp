@@ -27,25 +27,6 @@ double SensorModel::sampleSensorModel(
     // Angle of the laser scan
     double angle = laserScan.angle_min;
 
-    // If hardware acceleration is enabled
-    #ifdef USE_HARDWARE_ACCELERATION
-    
-    // Array of the projected points
-    uint16_t projectedPoints[NUM_OF_PARTICLES*NUM_LASERS][2];
-    
-    for(int i = 0; i < laserScan.ranges.size; i++){
-        if(!(range < laserScan.range_min || range > laserScan.range_max)){ 
-
-        // Calculate the projected point
-        float x = mapPose.x + laserScan.ranges.data[i] * cos(angle + mapPose.theta);
-        float y = mapPose.y + laserScan.ranges.data[i] * sin(angle + mapPose.theta);
-        calculateGridPose(x, y, &projectedPoints[i][0], &projectedPoints[i][1]);
-        angle += laserScan.angle_increment;
-    }
-
-    // Send the number of 
-        
-    #else
     
     // ==================================================================================
     // Loop through all the laser scan ranges
@@ -78,8 +59,6 @@ double SensorModel::sampleSensorModel(
 
     }
     // ==================================================================================
-
-    #endif
 
     return particleProbability;
 }
