@@ -49,7 +49,7 @@ public:
     );
 
     static SimplePose calculateMapPose(geometry_msgs__msg__Pose particlePose);
-    static void calculateGridPose(float x_input, float y_input, uint32_t* xy_output);
+    static void calculateGridPose(float x_input, float y_input, int32_t* xy_output);
 
     double closestObstacle(
         double x,

@@ -101,10 +101,6 @@ void ParticleFilter::initParticleFilter(){
         double x = normalDistribution(0, 0.05);
         double y = normalDistribution(0, 0.05);
         double yaw = normalDistribution(0, 0.01);
-
-        // double x = (double)rand()/(double)RAND_MAX * X_WIDTH - X_WIDTH/2;
-        // double y = (double)rand()/(double)RAND_MAX * Y_WIDTH - Y_WIDTH/2;
-        // double yaw = (double)rand()/(double)RAND_MAX * YAW_WIDTH - YAW_WIDTH/2;
         
         particle.initParticle(x, y, yaw, 1.0/NUM_OF_PARTICLES);                             // Init the particles
         particles.push_back(particle);                                                      // Append particle to the vector (dynamic list)
@@ -123,7 +119,7 @@ bool ParticleFilter::odomWasUpdated(){
     return true;
 }
 
-void ParticleFilter::sendProjectedPoints(uint32_t *points, uint32_t nb_scans){
+void ParticleFilter::sendProjectedPoints(int32_t *points, uint32_t nb_scans){
     // Send instruction to FPGA
     const uint8_t startInstruction[4]= {0x00, 0x00, 0x00, 0x00};
     Serial2.write(startInstruction, 4);
@@ -172,7 +168,7 @@ std::tuple<geometry_msgs__msg__PoseArray,geometry_msgs__msg__Pose,bool> Particle
     float scan_angles[NUM_LASERS];
     // Projected points are store like so (0xXXXXYYYY)
     // where XXXX is the X coordinate and YYYY is the Y coordinate
-    uint32_t projectedPoints[NUM_OF_PARTICLES*NUM_LASERS];
+    int32_t projectedPoints[NUM_OF_PARTICLES*NUM_LASERS];
     uint8_t num_valid_scans = 0;
     // Get laser scans from latest laser scans
     double angle = latestLaserScan.angle_min;

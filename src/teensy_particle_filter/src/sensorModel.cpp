@@ -80,16 +80,19 @@ SimplePose SensorModel::calculateMapPose(geometry_msgs__msg__Pose particlePose){
     return mapPose;
 }
 
-void SensorModel::calculateGridPose(float x_input, float y_input, uint32_t* xy_output){
+void SensorModel::calculateGridPose(float x_input, float y_input, int32_t* xy_output){
 
     // Add the map origin to the x and y
-    float x = x_input + MAP_ORIGIN_X;
-    float y = y_input + MAP_ORIGIN_Y;
+    float x = x_input - MAP_ORIGIN_X;
+    float y = y_input - MAP_ORIGIN_Y;
+
+    int MAP_HEIGHT =  sizeof(map_array) / sizeof(map_array[0]);
+    int MAP_WIDTH = sizeof(map_array[0]) / sizeof(bool);
 
     // Calculate the grid pose
-    uint16_t x_grid = (uint16_t) round(x / MAP_RESOLUTION);
-    uint16_t y_grid = (uint16_t) round(y / MAP_RESOLUTION);
-    *xy_output =  (((uint32_t)x_grid) << 16) | y_grid;
+    int16_t x_grid = (int16_t) round(x / MAP_RESOLUTION);
+    int16_t y_grid = MAP_HEIGHT - ((int16_t) round(y / MAP_RESOLUTION));
+    *xy_output =  (((int32_t)x_grid) << 16) | y_grid;
 }
 
 double SensorModel::closestObstacle(double x, double y, void (*printDebug)(const char*)){

@@ -6,15 +6,28 @@
 
 Steps to run the Teensy code:
 
-x. Run the micro-ROS agent on your host machine
+1. Connect your Teensy 4.1 to your computer via USB!
 
-```
+![Teensy 4.1](https://www.pjrc.com/store/teensy41_4.jpg)
+
+2. Build, upload and run the code on the Teensy 4.1 as shown in the [Teensy 4.1 Readme](https://github.com/matthew-william-lock/teensy-vs-upduino-particle-filter/tree/fpga-accelerator/src/teensy_particle_filter).
+
+3. Install docker 
+
+```bash
 sudo snap install docker
 ```
 
-```
+> This step is shown for Ubuntu, please see the [docker documentation](https://docs.docker.com/engine/install/) for other operating systems.
+
+
+4. Run the micro-ROS agent on your host machine
+
+```bash
 sudo docker run -it --rm -v /dev:/dev -v /dev/shm:/dev/shm --privileged --net=host microros/micro-ros-agent:$ROS_DISTRO serial --dev /dev/ttyACM0 -v6
 ```
+
+*Documentation incomplete*
 
 ## FPGA
 
