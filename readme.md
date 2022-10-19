@@ -2,9 +2,39 @@
 
 *Documentation is not finalised*
 
-## Teensy
+- [Installation](#installation)
+  * [Requirements](#requirements)
+  * [Getting Started](#getting-started)
+- [Teensy Particle Filter](#teensy-particle-filter)
+- [Teensty Particle Filter + FPGA Accelerator](#teensty-particle-filter---fpga-accelerator)
+- [Dualsense Controller](#dualsense-controller)
+- [Webots Simulator](#webots-simulator)
+- [For Interest's Sakes](#for-interest-s-sakes)
+  * [Teensy Development](#teensy-development)
+- [Interesting Tools](#interesting-tools)
 
-Steps to run the Teensy code:
+<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
+
+
+<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
+
+## Installation
+
+### Requirements
+
+- [Ubuntu 22.04]()
+- [Numpy]()
+- [Webots 2022a](https://github.com/cyberbotics/webots/releases/tag/R2022a)
+
+### Getting Started
+
+```bash
+some text
+```
+
+## Teensy Particle Filter
+
+Steps to run the Teensy particle filter & simulation:
 
 1. Connect your Teensy 4.1 to your computer via USB!
 
@@ -29,7 +59,7 @@ sudo docker run -it --rm -v /dev:/dev -v /dev/shm:/dev/shm --privileged --net=ho
 
 *Documentation incomplete*
 
-## FPGA
+## Teensty Particle Filter + FPGA Accelerator
 
 ## Dualsense Controller
 
@@ -74,11 +104,9 @@ ros2 launch p9n_node teleop.launch.py
 ros2 launch mcl mcl_teensy_launch.py rviz:=true mission_time:=10 rb:=false
 ```
 
-## Requirements
+## Webots Simulator
 
-- [Ubuntu 22.04]()
-- [Numpy]()
-- [Webots 2022a](https://github.com/cyberbotics/webots/releases/tag/R2022a)
+## For Interest's Sakes
 
 ### Teensy Development
 - [VSCode + PlatformIO](https://platformio.org/)
