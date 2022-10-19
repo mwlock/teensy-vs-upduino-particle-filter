@@ -4,3 +4,6 @@
 [submodule "src/webots_ros2"]
 	path = src/webots_ros2
 	url = https://github.com/matthew-william-lock/webots_ros2
+[submodule "src/particle-filter-accelerator"]
+	path = src/particle-filter-accelerator
+	url = https://github.com/thechosenone98/particle-filter-accelerator
