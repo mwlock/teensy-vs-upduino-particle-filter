@@ -245,6 +245,12 @@ void setup() {
   set_microros_serial_transports(Serial);
   delay(2000);
 
+  // Init Serial1 if hardware acceleration is enabled
+  #if USE_HARDWARE_ACCELERATION
+    Serial1.begin(3000000);
+    delay(2000);
+  #endif
+
   // LED setup and start up indicator
   ledStatus = false;
   pinMode(LED_BUILTIN, OUTPUT);

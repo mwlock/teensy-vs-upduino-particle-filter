@@ -27,6 +27,12 @@ struct SimplePose
     double theta;
 };
 
+struct GridPosition
+{
+    uint16_t x;
+    uint16_t y;
+};
+
 class SensorModel
 {
 private:
@@ -43,6 +49,7 @@ public:
     );
 
     static SimplePose calculateMapPose(geometry_msgs__msg__Pose particlePose);
+    static void calculateGridPose(float x_input, float y_input, int32_t* xy_output);
 
     double closestObstacle(
         double x,

@@ -67,3 +67,4 @@ ros2 topic echo /particle_filter/config_string --truncate-length 1000 --field da
 - [micro_ros_arduino](https://github.com/micro-ROS/micro_ros_arduino)
 - [How to include a custom ROS message in micro-ROS
 ](https://micro.ros.org/docs/tutorials/advanced/create_new_type/)
+- [Using the Hardware Serial Ports](https://www.pjrc.com/teensy/td_uart.html)

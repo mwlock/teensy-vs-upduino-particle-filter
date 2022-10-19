@@ -19,11 +19,6 @@ geometry_msgs__msg__Pose MotionModel::sampleMotionModel(
         
         std::tie(d1, dt, d2) = MotionModel::getPoseDelta(latestOdom, prevOdom);
 
-        // Debug d1, dt, d2
-        // char debug[100];
-        // sprintf(debug, "d1: %f, dt: %f, d2: %f)", d1, dt, d2);
-        // printDebug(debug);
-
         // Uncertainties
         double alpha1 = ALPHA1;
         double alpha2 = ALPHA2;
@@ -34,16 +29,6 @@ geometry_msgs__msg__Pose MotionModel::sampleMotionModel(
         double std_dev_d1 = sqrt((alpha1 * pow(d1,2)) + (alpha2 * pow(dt,2)));
         double std_dev_dt = sqrt((alpha3 * pow(dt,2)) + (alpha4 * pow(d1,2)) + (alpha4 * pow(d2,2)));
         double std_dev_d2 = sqrt((alpha1 * pow(d2,2)) + (alpha2 * pow(dt,2)));
-
-        // Print out the standard deviations
-        // char buffer[100];
-        // sprintf(buffer, "std_dev_d1: %f", std_dev_d1);
-        // printDebug(buffer);
-        // sprintf(buffer, "std_dev_dt: %f", std_dev_dt);
-        // printDebug(buffer);
-        // sprintf(buffer, "std_dev_d2: %f", std_dev_d2);
-        // printDebug(buffer);
-
 
         // Determine noise on motion model
         double noised1 = 0.0;

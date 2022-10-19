@@ -1,9 +1,13 @@
 // Monte Carlo Particle Filter Config
 
-#define experiment -1
+#define USE_HARDWARE_ACCELERATION 1
+#define experiment 1
+#define debug 0
 
 // Set number of particles depending on the experiment
-#if experiment == 1
+#if debug ==1
+#define NUM_OF_PARTICLES 1
+#elif experiment == 1
 #define NUM_OF_PARTICLES 128
 #elif experiment == 2
 #define NUM_OF_PARTICLES 256

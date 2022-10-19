@@ -89,6 +89,8 @@ public:
     bool isInitialised();
     bool isParticlesInitialised();
     bool odomWasUpdated();
+
+    void sendProjectedPoints(int32_t *points, uint32_t nb_scans);
 };
 
 #endif
