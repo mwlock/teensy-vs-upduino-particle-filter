@@ -86,8 +86,13 @@ void SensorModel::calculateGridPose(float x_input, float y_input, int32_t* xy_ou
     float x = x_input;
     float y = y_input;
 
+    #if USE_HARDWARE_ACCELERATION == 0
     int MAP_HEIGHT =  sizeof(map_array) / sizeof(map_array[0]);
     int MAP_WIDTH = sizeof(map_array[0]) / sizeof(bool);
+    #else
+    int MAP_HEIGHT =  150;
+    int MAP_WIDTH = 150;
+    #endif
 
     // Calculate the grid pose
     int16_t x_grid = (int16_t) round(x / MAP_RESOLUTION);

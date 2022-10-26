@@ -142,6 +142,7 @@ ax.plot(time, update_time_3, label='Experiment 3')
 ax.set_xlabel('Time [s]')
 ax.set_ylabel('Update time [ms]')
 ax.set_title('Update time for each experiment')
+ax.set_ylim(0, 170)
 ax.grid(True)
 
 # Calculate standard deviation for each experiment
@@ -197,6 +198,7 @@ for i in range(1, len(num_particles_list) + 1):
     ax.set_xlabel('Time [s]')
     ax.set_ylabel('Error [m]')
     ax.set_title(f'Error for {num_particles_list[i-1]} particles')
+    ax.set_ylim(0, 0.3)
     ax.grid(True)
 
     # Get RMSE for each experiment
@@ -252,7 +254,8 @@ fig, ax = plt.subplots(figsize=(12, 6))
 BASE_MEMORY_USAGE = 686
 
 # Minus BASE_MEMORY_USAGE from each memory usage
-memory_usage_list = [BASE_MEMORY_USAGE - memory_usage for memory_usage in memory_usage_list]
+memory_usage_list_non_acc = [BASE_MEMORY_USAGE - memory_usage for memory_usage in memory_usage_list]
+memory_usage_list_non_acc = [memory_usage + BASE_MEMORY_USAGE for memory_usage in memory_usage_list_non_acc]
 
 # Print the memory usage for each experiment
 for i, v in enumerate(memory_usage_list):
@@ -261,17 +264,54 @@ for i, v in enumerate(memory_usage_list):
 ax.set_xlabel('Number of particles')
 
 ax.set_ylabel('Memory usage [kB]')
-ax.set_title('Memory usage for each experiment')
+ax.set_title('Memory usage for non-accumulated particle filter')
 ax.grid(True)
+ax.set_axisbelow(True)
 
 # Make the bars thicker
 # list num_particles_list to list of strings
-ax.bar([str(x) for x in num_particles_list], memory_usage_list, width=0.5)
+ax.bar([str(x) for x in num_particles_list], memory_usage_list_non_acc, width=0.5)
 
 # Place value label on top of each bar
+for i, v in enumerate(memory_usage_list_non_acc):
+    ax.text(i, v + 0.5, str(int(v)), horizontalalignment='center')
+
+save_plot(fig, 'memory_usage_non_accelerated')
+
+
+# Stacked bar char =================================================================================
+
+fig, ax = plt.subplots(figsize=(12, 6))
+
+# Minus BASE_MEMORY_USAGE from each memory usage
+memory_usage_list = [BASE_MEMORY_USAGE - memory_usage for memory_usage in memory_usage_list]
+
+b_ram_usage = np.array([10,14,24])
+mem_usage_upduni = 4096 * b_ram_usage 
+
+# Convert memory usage to kB from bits
+mem_usage_upduni = mem_usage_upduni/8/1000
+
+labels = [str(x) for x in num_particles_list]
+
+ax.bar(labels, memory_usage_list, label='Teensy 4.1')
+ax.bar(labels, mem_usage_upduni, bottom=memory_usage_list, label='UPduino v3.1')
+
+ax.set_ylabel('Memory usage [kB]')
+ax.set_title('Memory usage for accelerated particle filter')
+ax.grid(True)
+ax.set_axisbelow(True)
+ax.legend()
+
+# Place number label on top of each bar
 for i, v in enumerate(memory_usage_list):
     ax.text(i, v + 0.5, str(int(v)), horizontalalignment='center')
 
-save_plot(fig, 'memory_usage')
+for i, v in enumerate(mem_usage_upduni):
+    ax.text(i, v + memory_usage_list[i] + 0.5, str(int(v+memory_usage_list[i])), horizontalalignment='center')
 
-plt.show() 
+save_plot(fig, 'memory_usage_accelerated')
+
+# =================================================================================================
+
+plt.show() # Show all plots

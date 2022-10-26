@@ -1,7 +1,10 @@
 // Monte Carlo Particle Filter Config
 
+#ifndef MCL_H
+#define MCL_H
+
 #define USE_HARDWARE_ACCELERATION 1
-#define experiment 1
+#define experiment 2
 #define debug 0
 
 // Set number of particles depending on the experiment
@@ -22,7 +25,9 @@
 
 #define adaptive false
 #define likelihood_model true
-#define epsilon 0.1
+// #define epsilon 0.1
 #define upper_quantile 3
 #define min_number_of_particles 50
 #define max_number_of_particles 1000
+
+#endif

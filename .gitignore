@@ -4,3 +4,5 @@
 *.bag
 rosbag2_*
 *.pdf
+*.DAT
+metadata.yaml

@@ -4,7 +4,14 @@
 
 #include <vector>
 
+// If USE_HARDWARE_ACCELERATION is set to 0, the particle filter will include map_array.h
+
+#include "../config/mcl.h"
+
+#if USE_HARDWARE_ACCELERATION == 0
 #include "../include/map_array.h"
+#endif
+
 #include <tuple>
 #include "particle.hpp"
 #include "motionModel.hpp"
@@ -71,7 +78,12 @@ public:
 
     ParticleFilter();
     void initParticleFilter();
+
+    // Functions to ingore if USE_HARDWARE_ACCELERATION is set to 1
+    #if USE_HARDWARE_ACCELERATION == 0
     std::vector<std::tuple<double, double>> getMapObstacles();
+    #endif
+
     std::tuple<geometry_msgs__msg__PoseArray, geometry_msgs__msg__Pose, bool> updateParticles();
 
     void updateLatestOdom(nav_msgs__msg__Odometry odom);

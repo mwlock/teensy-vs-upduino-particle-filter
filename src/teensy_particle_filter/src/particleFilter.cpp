@@ -8,7 +8,10 @@ ParticleFilter::ParticleFilter(void (*callback)(const char*))
     this->printDebug = callback;
 
     // Get a vector of all the map points containing an obstacle
+
+    #if USE_HARDWARE_ACCELERATION == 0
     this->map_obstacles = this->getMapObstacles();
+    #endif
 
     updating = false;
     motionModel = MotionModel();
@@ -45,7 +48,11 @@ ParticleFilter::ParticleFilter(void (*callback)(const char*))
 
 ParticleFilter::ParticleFilter(){
     // Get a vector of all the map points containing an obstacle
+
+    #if USE_HARDWARE_ACCELERATION == 0
     this->map_obstacles = this->getMapObstacles();
+    #endif
+
     updating = false;
     this->laserScanUpdating = false;
     motionModel = MotionModel();
@@ -68,9 +75,12 @@ ParticleFilter::ParticleFilter(){
 
 }
 
+#if USE_HARDWARE_ACCELERATION == 0
 std::vector<std::tuple<double, double>> ParticleFilter::getMapObstacles(){
+
     int MAP_HEIGHT =  sizeof(map_array) / sizeof(map_array[0]);
     int MAP_WIDTH = sizeof(map_array[0]) / sizeof(bool);
+    
     std::vector<std::tuple<double, double>> map_obstacles;
     for (int i = 0; i < MAP_HEIGHT; i++){
         for (int j = 0; j < MAP_WIDTH; j++){
@@ -83,6 +93,7 @@ std::vector<std::tuple<double, double>> ParticleFilter::getMapObstacles(){
     }
     return map_obstacles;
 }
+#endif
 
 void ParticleFilter::initParticleFilter(){
 

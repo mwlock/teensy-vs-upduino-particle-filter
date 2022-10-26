@@ -17,7 +17,11 @@
 
 #include "../config/sensor_model.h"
 #include "../config/map_conf.h"
+#include "../config/mcl.h"
+
+#if USE_HARDWARE_ACCELERATION == 0
 #include "../include/map_array.h"
+#endif
 
 // Struct called "SimplePose" that contains the x, y, and theta of a particle
 struct SimplePose
