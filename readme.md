@@ -38,7 +38,7 @@ Localisation is a fundamental prerequisite to any meaningful application within 
 <!-- GETTING STARTED -->
 ## Getting Started
 
-Detailed here is the equipment you need to run the provided code and example experiments that we ran for the project.
+Detailed here is the equipment you need to run the provided code and example experiments
 
 ### Bill of Materials
 
@@ -53,9 +53,29 @@ The two components used for the study are the Teensy 4.1 and the UPduino v3.1. T
 | GPIO Pins | 34 | 64 |
 | Power | 5 V | 3.3 V |
 
-The image below shows the two components used in the study.
+### Prerequisites
 
-<img src="/images/components.png" width="100%">
+The following software is required to run the code and experiments.
+
+* Ubuntu 22.04
+
+
+* [Webots 2022a](https://github.com/cyberbotics/webots/releases/tag/R2022a)
+
+Run the following commands to install Webots 2022a after downloading the .deb file:
+
+```sh
+sudo apt install ./webots_2023a_amd64.deb
+```
+
+
+
+* Numpy
+```sh
+sudo apt-get install python3-numpy
+```
+
+
 
 *Documentation is not finalised*
 
