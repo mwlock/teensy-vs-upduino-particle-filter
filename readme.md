@@ -24,7 +24,7 @@
 
 # Evaluating Particle Efficiency of Hardware Accelerated Particle Filtering for Robot Localisation
 
-[![Report][report]](/images/header.png)
+<img src="/images/header.png" width="600" height="300">
 
 Localisation is a fundamental prerequisite to any meaningful action or application within the context of robotics. One powerful method for localisation, known as particle filtering, is becoming more and more popular. While particle filtering remains less computationally complex than alternative methods such as Kalman filtering, the ability of a particle filter to accurately and quickly estimate robot pose is directly proportional to the number of particles. This is particularly concerning given that there is an increasing need for particle filters to run in demanding and constrained environments. Consequently, particle filtering methods are required to be fast and efficient under various conditions to allow for scalable implementations in hardware-constrained environments. Since FPGAs and microcontrollers are widely used in various domains, characterisation of the accelerated and non-accelerated per-particle efficiency and performance, in terms of power usage, memory usage, and execution time per sample could serve as a useful guide for future applications. Through this study, it is shown that hardware acceleration should be considered the preferred solution when there is a need for high performance and energy efficiency. It is however noted that the viability of hardware acceleration is dependent on the required map size and resolution. Finally, it is concluded that no value is offered by hardware acceleration for non-resource-constrained applications where high sampling rates are not required.
 
