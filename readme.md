@@ -35,7 +35,27 @@
 
 Localisation is a fundamental prerequisite to any meaningful application within the context of robotics. One powerful method for localisation, known as particle filtering, is becoming more and more popular. While particle filtering remains less computationally complex than alternative methods such as Kalman filtering, the ability of a particle filter to accurately and quickly estimate robot pose is directly proportional to the number of particles. This is particularly concerning given that there is an increasing need for particle filters to run in demanding and constrained environments. Consequently, particle filtering methods are required to be fast and efficient under various conditions to allow for scalable implementations in hardware-constrained environments. Since FPGAs and microcontrollers are widely used in various domains, characterisation of the accelerated and non-accelerated per-particle efficiency and performance, in terms of power usage, memory usage, and execution time per sample could serve as a useful guide for future applications. Through this study, it is shown that hardware acceleration should be considered the preferred solution when there is a need for high performance and energy efficiency. It is however noted that the viability of hardware acceleration is dependent on the required map size and resolution. Finally, it is concluded that no value is offered by hardware acceleration for unconstrained applications where high sampling rates are not required.
 
+<!-- GETTING STARTED -->
+## Getting Started
 
+Detailed here is the equipment you need to run the provided code and example experiments that we ran for the project.
+
+### Bill of Materials
+
+The two components used for the study are the Teensy 4.1 and the UPduino v3.1. The Teensy 4.1 is a microcontroller that is based on the ARM Cortex M7 processor. The UPduino v3.1 is an FPGA development board that is based on the Lattice iCE40 UltraPlus FPGA. The following table provides a summary of the specifications of the two components.
+
+| Component | Teensy 4.1 | UPduino v3.1 |
+| :--- | :---: | :---: |
+| Processor | ARM Cortex M7 | Lattice iCE40 UltraPlus FPGA |
+| Clock Speed | 600 MHz | 48 MHz |
+| Memory | 1 MB | 256 KB |
+| Flash Memory | 2 MB | 256 KB |
+| GPIO Pins | 34 | 64 |
+| Power | 5 V | 3.3 V |
+
+The image below shows the two components used in the study.
+
+<img src="/images/components width="100%">
 
 *Documentation is not finalised*
 
