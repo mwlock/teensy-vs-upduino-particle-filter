@@ -19,8 +19,12 @@
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
 [![MIT License][license-shield]][license-url]
-[![LinkedIn][linkedin-shield-matt]][linkedin-url-matthew]
-[![LinkedIn][linkedin-shield-zach]][linkedin-url-zach]
+
+<div align="center">
+  [![LinkedIn][linkedin-shield-matt]][linkedin-url-matthew]
+  [![LinkedIn][linkedin-shield-zach]][linkedin-url-zach]
+</div>
+
 
 
 # Evaluating the Particle Efficiency Between the Teensy 4.1 and UPduino v3.1 FPGA for Robot Localisation
