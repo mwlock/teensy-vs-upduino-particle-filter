@@ -55,7 +55,7 @@ The two components used for the study are the Teensy 4.1 and the UPduino v3.1. T
 
 The image below shows the two components used in the study.
 
-<img src="/images/components width="100%">
+<img src="/images/components.png" width="100%">
 
 *Documentation is not finalised*
 
