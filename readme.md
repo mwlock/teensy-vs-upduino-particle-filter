@@ -27,13 +27,13 @@
 [<img src="/images/header.png" width="100%">](https://www.overleaf.com/read/rgdvrxpxgdvm
 )
 
-**Keywords**
-> Particle filter, Localisation, Hardware Acceleration, Teensy 4.1, UPduino v3.1
-
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
 Localisation is a fundamental prerequisite to any meaningful application within the context of robotics. One powerful method for localisation, known as particle filtering, is becoming more and more popular. While particle filtering remains less computationally complex than alternative methods such as Kalman filtering, the ability of a particle filter to accurately and quickly estimate robot pose is directly proportional to the number of particles. This is particularly concerning given that there is an increasing need for particle filters to run in demanding and constrained environments. Consequently, particle filtering methods are required to be fast and efficient under various conditions to allow for scalable implementations in hardware-constrained environments. Since FPGAs and microcontrollers are widely used in various domains, characterisation of the accelerated and non-accelerated per-particle efficiency and performance, in terms of power usage, memory usage, and execution time per sample could serve as a useful guide for future applications. Through this study, it is shown that hardware acceleration should be considered the preferred solution when there is a need for high performance and energy efficiency. It is however noted that the viability of hardware acceleration is dependent on the required map size and resolution. Finally, it is concluded that no value is offered by hardware acceleration for unconstrained applications where high sampling rates are not required.
+
+**Keywords**
+> Particle filter, Localisation, Hardware Acceleration, Teensy 4.1, UPduino v3.1
 
 <!-- GETTING STARTED -->
 ## Getting Started
@@ -61,18 +61,24 @@ The following software is required to run the code and experiments.
 
 * Ubuntu 22.04
 
+* ROS2 Humble
+
+Install ROS2 Humble following the instructions [here](https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debians.html).
+
 * [Webots 2022a](https://github.com/cyberbotics/webots/releases/tag/R2022a)
 
 Run the following commands to install Webots 2022a after downloading the .deb file:
 
 ```sh
-sudo apt install ./webots_2023a_amd64.deb
+sudo apt install ./webots_2022a_amd64.deb
 ```
 
 * Numpy
 ```sh
 sudo apt-get install python3-numpy
 ```
+
+There is a known cirtificate issue with the Webots installation. To fix this, follow the instructions [here](https://github.com/cyberbotics/webots_ros2/issues/465).
 
 2. Build the neccessary ROS2 packages
 
@@ -95,6 +101,20 @@ Build the ROS2 packages:
 cd ~/ros2_ws
 colcon build 
 ```
+> If you encounter an error related to "hardware_interface_DIR", try running the following command:
+
+ ```sh
+sudo apt install ros-humble-ros2-control
+```
+
+Source the ROS2 workspace:
+
+```sh
+source ~/ros2_ws/install/local_setup.bash
+```
+
+<!-- USAGE EXAMPLES -->
+## Usage
 
 *Documentation is not finalised*
 
