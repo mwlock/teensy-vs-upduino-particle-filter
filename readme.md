@@ -166,6 +166,8 @@ Parameters:
 
 ### Embedded Localisation
 
+<img src="/images/experimental_config" width="100%">
+
 Localisation here is perfomed on the Teensy 4.1 microcontroller. Before running the simulation, the code must be uploaded to the Teensy 4.1 and your host machine must be running micro-ROS as described in the [here](https://github.com/matthew-william-lock/teensy-vs-upduino-particle-filter/tree/main/src/teensy_particle_filter).
 
  The following command is used to run the simulation:
