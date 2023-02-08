@@ -30,6 +30,24 @@
 **Keywords**
 > Particle filter, Localisation, Hardware Acceleration, Teensy 4.1, UPduino v3.1
 
+<!-- TABLE OF CONTENTS -->
+<details>
+  <summary>Table of Contents</summary>
+  <ol>
+    <li>
+      <a href="#about-the-project">About The Project</a>
+    </li>
+    <li>
+      <a href="#getting-started">Getting Started</a>
+      <ul>
+        <li><a href="#bill-of-materials">Bill of Materials</a></li>
+        <li><a href="#prerequisites">Prerequisites</a></li>
+      </ul>
+    </li>
+    <li><a href="#usage">Usage</a></li>
+  </ol>
+</details>
+
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
@@ -121,6 +139,46 @@ source ~/ros2_ws/install/local_setup.bash
 Show here is documentation of how to run the three experiments that were run for this investigation. Shown in the video below is the pure Python implementation without any embedded localisation (i.e. without the Teensy or Upduino). This base case simulation is extended from [Debby Nirwan](https://github.com/debbynirwan/mcl).
 
 https://user-images.githubusercontent.com/53016036/217649590-610c5c57-9cef-468f-a281-43cfc639612a.mp4
+
+> All of the instructions below assume you have already installed the required software described in the [Getting Started](#getting-started) section.
+
+## Simulated Localisation
+
+Localisation here is perfomed on the host machine using the Python implementation of the particle filter. The following command is used to run the simulation:
+
+```sh
+ros2 launch mcl mcl_launch.py rviz:=true mission_time:=2
+```
+
+Parameters:
+| Parameter                 | Description   |	
+| :------------------------ | :-------------|
+| rviz                      | Whether to run RViz or not. |
+| mission_time              | The time in minutes. |
+
+## Embedded Localisation (Accelerated and Non-Accelerated)
+
+Localisation here is perfomed on the Teensy 4.1 microcontroller. Before running the simulation, the code must be uploaded to the Teensy 4.1 and your host machine must be running micro-ROS as described in the [here](https://github.com/matthew-william-lock/teensy-vs-upduino-particle-filter/tree/main/src/teensy_particle_filter).
+
+ The following command is used to run the simulation:
+
+```sh
+ros2 launch mcl mcl_teensy_launch.py rviz:=true mission_time:=2
+```
+
+Parameters:
+| Parameter                 | Description   |	
+| :------------------------ | :-------------|
+| rviz                      | Whether to run RViz or not. |
+| mission_time              | The time in minutes. |
+
+> Acceleration is achieved by using the FPGA accelerator, the experimental setup of which is described [here](). To toggle acceleration, this must be set in the [mcl config](https://github.com/matthew-william-lock/teensy-vs-upduino-particle-filter/blob/main/src/teensy_particle_filter/config/mcl.h) file on the Teensy 4.1. Do not forget to recomplie the code and upload it to the Teensy 4.1. Parameters of the configuration file are described below:
+
+| Parameter                 | Description   |
+| :------------------------ | :-------------|
+| USE_HARDWARE_ACCELERATION | Whether to use the FPGA accelerator or not. Here 1 and 0 represent True and False |
+| NUM_OF_PARTICLES         | The number of particles to use in the particle filter. |
+
 
 *Documentation is not finalised*
 
