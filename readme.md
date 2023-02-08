@@ -118,6 +118,10 @@ source ~/ros2_ws/install/local_setup.bash
 <!-- USAGE EXAMPLES -->
 ## Usage
 
+Show here is documentation of how to run the three experiments that were run for this investigation. Shown in the video below is the pure Python implementation without any embedded localisation (i.e. without the Teensy or Upduino). This base case simulation is extended from [Debby Nirwan](https://github.com/debbynirwan/mcl).
+
+https://user-images.githubusercontent.com/53016036/217649590-610c5c57-9cef-468f-a281-43cfc639612a.mp4
+
 *Documentation is not finalised*
 
 - [Installation](#installation)
