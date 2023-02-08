@@ -187,61 +187,6 @@ Parameters:
 | USE_HARDWARE_ACCELERATION | Whether to use the FPGA accelerator or not. Here 1 and 0 represent True and False |
 | NUM_OF_PARTICLES         | The number of particles to use in the particle filter. |
 
-
-*Documentation is not finalised*
-
-- [Installation](#installation)
-  * [Requirements](#requirements)
-  * [Getting Started](#getting-started)
-- [Teensy Particle Filter](#teensy-particle-filter)
-- [Teensty Particle Filter + FPGA Accelerator](#teensty-particle-filter---fpga-accelerator)
-- [Dualsense Controller](#dualsense-controller)
-- [Webots Simulator](#webots-simulator)
-- [For Interest's Sakes](#for-interest-s-sakes)
-  * [Teensy Development](#teensy-development)
-- [Interesting Tools](#interesting-tools)
-
-<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
-
-## Installation
-
-### Requirements
-
-- [Ubuntu 22.04]()
-- [Numpy]()
-- [Webots 2022a](https://github.com/cyberbotics/webots/releases/tag/R2022a)
-
-### Getting Started
-
-```bash
-some text
-```
-
-## Teensy Particle Filter
-
-Steps to run the Teensy particle filter & simulation:
-
-1. Connect your Teensy 4.1 to your computer via USB!
-
-![Teensy 4.1](https://www.pjrc.com/store/teensy41_4.jpg)
-
-2. Build, upload and run the code on the Teensy 4.1 as shown in the [Teensy 4.1 Readme](https://github.com/matthew-william-lock/teensy-vs-upduino-particle-filter/tree/fpga-accelerator/src/teensy_particle_filter).
-
-3. Install docker 
-
-```bash
-sudo snap install docker
-```
-
-> This step is shown for Ubuntu, please see the [docker documentation](https://docs.docker.com/engine/install/) for other operating systems.
-
-
-4. Run the micro-ROS agent on your host machine
-
-```bash
-sudo docker run -it --rm -v /dev:/dev -v /dev/shm:/dev/shm --privileged --net=host microros/micro-ros-agent:$ROS_DISTRO serial --dev /dev/ttyACM0 -v6
-```
-
 ## Miscellanous
 
 Below are some links to other tools and development guides that we found useful during the development of this project.
