@@ -107,6 +107,8 @@ colcon build
 sudo apt install ros-humble-ros2-control
 ```
 
+:warning: Please follow the build guide for the ```mcl``` package found in src. This is important and the simulation will not work otherwise as you will have not installed the necessary dependencies.
+
 Source the ROS2 workspace:
 
 ```sh
