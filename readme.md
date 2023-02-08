@@ -61,13 +61,19 @@ The following software is required to run the code and experiments.
 
 * Ubuntu 22.04
 
+* ROS2 Humble
+
+Install ROS2 Humble following the instructions [here](https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debians.html).
+
 * [Webots 2022a](https://github.com/cyberbotics/webots/releases/tag/R2022a)
 
 Run the following commands to install Webots 2022a after downloading the .deb file:
 
 ```sh
-sudo apt install ./webots_2023a_amd64.deb
+sudo apt install ./webots_2022a_amd64.deb
 ```
+
+There is a known cirtificate issue with the Webots installation. To fix this, follow the instructions [here](https://github.com/cyberbotics/webots_ros2/issues/465).
 
 * Numpy
 ```sh
@@ -95,6 +101,20 @@ Build the ROS2 packages:
 cd ~/ros2_ws
 colcon build 
 ```
+> If you encounter an error related to "hardware_interface_DIR", try running the following command:
+
+ ```sh
+sudo apt install ros-humble-ros2-control
+```
+
+Source the ROS2 workspace:
+
+```sh
+source ~/ros2_ws/install/local_setup.bash
+```
+
+<!-- USAGE EXAMPLES -->
+## Usage
 
 *Documentation is not finalised*
 
