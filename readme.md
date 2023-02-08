@@ -44,7 +44,15 @@
         <li><a href="#prerequisites">Prerequisites</a></li>
       </ul>
     </li>
-    <li><a href="#usage">Usage</a></li>
+    <li>
+      <a href="#usage">Usage</a>
+      <ul>
+        <li><a href="#simulated-localisation">Simulated Localisation</a></li>
+        <li><a href="#embedded-localisation">Embedded Localisation</a></li>
+      </ul>
+    </li>
+
+    
   </ol>
 </details>
 
@@ -142,7 +150,7 @@ https://user-images.githubusercontent.com/53016036/217649590-610c5c57-9cef-468f-
 
 > All of the instructions below assume you have already installed the required software described in the [Getting Started](#getting-started) section.
 
-## Simulated Localisation
+### Simulated Localisation
 
 Localisation here is perfomed on the host machine using the Python implementation of the particle filter. The following command is used to run the simulation:
 
@@ -156,7 +164,7 @@ Parameters:
 | rviz                      | Whether to run RViz or not. |
 | mission_time              | The time in minutes. |
 
-## Embedded Localisation (Accelerated and Non-Accelerated)
+### Embedded Localisation
 
 Localisation here is perfomed on the Teensy 4.1 microcontroller. Before running the simulation, the code must be uploaded to the Teensy 4.1 and your host machine must be running micro-ROS as described in the [here](https://github.com/matthew-william-lock/teensy-vs-upduino-particle-filter/tree/main/src/teensy_particle_filter).
 
