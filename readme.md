@@ -57,8 +57,9 @@ The two components used for the study are the Teensy 4.1 and the UPduino v3.1. T
 
 The following software is required to run the code and experiments.
 
-* Ubuntu 22.04
+1. Install the required software needed to run the simulation.
 
+* Ubuntu 22.04
 
 * [Webots 2022a](https://github.com/cyberbotics/webots/releases/tag/R2022a)
 
@@ -68,14 +69,32 @@ Run the following commands to install Webots 2022a after downloading the .deb fi
 sudo apt install ./webots_2023a_amd64.deb
 ```
 
-
-
 * Numpy
 ```sh
 sudo apt-get install python3-numpy
 ```
 
+2. Build the neccessary ROS2 packages
 
+Clone the repository:
+
+```sh
+git clone --recurse-submodules -j8 https://github.com/matthew-william-lock/teensy-vs-upduino-particle-filter
+```
+
+Move the ROS2 packages into the `src` folder of your ROS2 workspace:
+
+```sh
+cp -r teensy-vs-upduino-particle-filter/src/mcl ~/ros2_ws/src/
+cp -r teensy-vs-upduino-particle-filter/src/webots_ros2 ~/ros2_ws/src/
+```
+
+Build the ROS2 packages:
+
+```sh
+cd ~/ros2_ws
+colcon build 
+```
 
 *Documentation is not finalised*
 
