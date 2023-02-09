@@ -84,6 +84,10 @@ Alternatively, you can install the micro-ROS agent on your host machine by follo
 ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyACM0
 ```
 
+#### Chaning the Particle Filter Parameters
+
+The particle filter paramters can be changed in the ```mcl.h``` file fonund in ```config``` folder. The parameters are explained in the main ```README.md``` file of the repository..
+
 ## Other Notes
 
 ### Echo Config String
