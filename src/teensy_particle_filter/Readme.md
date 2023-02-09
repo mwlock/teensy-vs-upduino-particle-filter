@@ -86,7 +86,7 @@ ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyACM0
 
 ## Other Notes
 
-# Echo Config String
+### Echo Config String
 
 ```bash
 ros2 topic echo /particle_filter/config_string --truncate-length 1000 --field data
