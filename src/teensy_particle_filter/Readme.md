@@ -1,14 +1,28 @@
-# Particle Filter Implementation on Teensy 4.1 using micro-ROS
+# Embedde Particle Filter on Teensy 4.1 using micro-ROS
 
-# Development Environment 
+This repository contains the code for the particle filter running on the Teensy 4.1. Simulation of the robotic platform is done using webots as outlined in the root [Readme](../Readme.md). Outlined below are the steps to get the particle filter running on the Teensy 4.1.
 
-1. PlatformIO needs ```git```, ```cmake``` and ```pip3``` to handle micro-ROS internal dependencies:
+<img src="/images/experimental_config.png" width="100%">
 
-```
-sudo apt install -y git cmake python3-pip
-```
+## Getting Started
 
-2. Fixing build errors
+### Prerequisites
+
+1. The [platformio VSCode extension](https://platformio.org/install/ide?install=vscode) was used to develop this code. While it is possible to use the command line, we will only outline the steps for the VSCode extension as this is the methodolgy used in our work.
+
+3. micro-ROS
+
+You may install micro-ROS following the [micro-ROS installation guide](https://micro.ros.org/docs/tutorials/core/first_application_linux/) and run the agent following the guide if you would like. For the purpose of the project, we suggest you simply run it within a docker container. 
+
+Please follow the folling [guide](https://docs.docker.com/engine/install/ubuntu/) to install docker.
+
+>If you are facing issues with getting docker to run on Ubuntu 22.04 WSL, please see the following [fix](https://github.com/docker/for-linux/issues/1406#issuecomment-1183487816).
+
+### Building and Uploading the Code
+
+1. Open the ```src/teensy_particle_filter``` folder in VSCode.
+
+2. Build the code by clicking the ```Build``` button in the bottom left corner of the screen or by pressing ```Ctrl+Shift+B```.
 
 In the case you encounter the following build error, 
 
@@ -48,11 +62,29 @@ In file included from /home/matt/.platformio/packages/toolchain-gccarmnoneeabi/a
 
 go to [bugzilla](https://gcc.gnu.org/bugzilla/attachment.cgi?id=36237&action=edit) and patch ```.platformio/packages/toolchain-gccarmnoneeabi/arm-none-eabi/include/c++/5.4.1/bits/random.tcc```.
 
-# Running micro-ROS
+> You should see a ```SUCCESS``` message in the terminal.
+
+3. Upload the code by clicking the ```Upload``` button in the bottom left corner of the screen or by pressing ```Ctrl+Shift+U```.
+
+### Running micro-ROS on your host machine
+
+Now that the code is uploaded to the Teensy, we need to run the micro-ROS agent on our host machine to communicate with the Teensy. The Teensy will automatically connect to the micro-ROS agent and start to communicate with the ROS 2 network once the micro-ROS agent is running. 
+
+1. Open a new terminal and run the following command to start the micro-ROS agent using docker.
+
+```
+sudo docker run -it --rm -v /dev:/dev -v /dev/shm:/dev/shm --privileged --net=host microros/micro-ros-agent:$ROS_DISTRO serial --dev /dev/ttyACM0 -v6
+```
+
+>Make sure to replace ```/dev/ttyACM0``` with the correct serial port that your Teensy is connected to.
+
+Alternatively, you can install the micro-ROS agent on your host machine by following the instructions [here](https://micro.ros.org/docs/tutorials/core/first_application_linux/) and then run the following command to start the micro-ROS agent.
 
 ```
 ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyACM0
 ```
+
+## Other Notes
 
 # Echo Config String
 
