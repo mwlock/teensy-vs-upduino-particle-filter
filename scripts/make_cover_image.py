@@ -28,6 +28,6 @@ def pdf_to_image(pdf_file, overlap_percentage=50, shadow_width=10):
     return result
 
 # Example usage
-pdf_file = "report.pdf"
-result = pdf_to_image(pdf_file, overlap_percentage=80, shadow_width=10)
-result.save("output.png")
+pdf_file = "miguel.pdf"
+result = pdf_to_image(pdf_file, overlap_percentage=85, shadow_width=10)
+result.save("miguel.png")
