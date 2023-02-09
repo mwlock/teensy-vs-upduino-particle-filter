@@ -1,6 +1,6 @@
 # Embedde Particle Filter on Teensy 4.1 using micro-ROS
 
-This repository contains the code for the particle filter running on the Teensy 4.1. Simulation of the robotic platform is done using webots as outlined in the root [Readme](../Readme.md). Outlined below are the steps to get the particle filter running on the Teensy 4.1.
+This repository contains the code for the particle filter running on the Teensy 4.1. Simulation of the robotic platform is done using webots as outlined in the root [Readme](https://github.com/matthew-william-lock/teensy-vs-upduino-particle-filter). Outlined below are the steps to get the particle filter running on the Teensy 4.1.
 
 <img src="/images/experimental_config.png" width="100%">
 
