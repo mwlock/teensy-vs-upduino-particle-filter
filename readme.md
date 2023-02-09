@@ -186,7 +186,7 @@ Parameters:
 
 | Parameter                 | Description   |
 | :------------------------ | :-------------|
-| USE_HARDWARE_ACCELERATION | Whether to use the FPGA accelerator or not. Here 1 and 0 represent True and False |
+| USE_HARDWARE_ACCELERATION | Whether to use the FPGA accelerator or not |
 | NUM_OF_PARTICLES         | The number of particles to use in the particle filter. |
 
 ## Miscellanous
