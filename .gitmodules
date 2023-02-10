@@ -7,6 +7,3 @@
 [submodule "src/particle-filter-accelerator"]
 	path = src/particle-filter-accelerator
 	url = https://github.com/thechosenone98/particle-filter-accelerator
-[submodule "src/upduino-fpga-particle-filter"]
-	path = src/upduino-fpga-particle-filter
-	url = https://github.com/thechosenone98/upduino-fpga-particle-filter
