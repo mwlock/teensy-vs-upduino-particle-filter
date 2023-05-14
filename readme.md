@@ -23,6 +23,7 @@
 [![LinkedIn][linkedin-shield-zach]][linkedin-url-zach]
 
 <h1 align="center">Evaluating Particle Efficiency of Hardware Accelerated Particle Filtering for Robot Localisation</h1>
+*Click the image below to read the project report*
 
 [<img src="/images/header.png" width="100%">](https://www.overleaf.com/read/rgdvrxpxgdvm
 )
